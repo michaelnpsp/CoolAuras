@@ -1,0 +1,12 @@
+## Interface: 80000
+## Author: Michael
+## Title: |cFF7FFF72Cool|r Auras |cFF4c9944Options|r
+## Notes: CoolAuras Configuration Interface
+## LoadOnDemand: 1
+## Dependencies: CoolAuras
+
+Libs\AceGUI-3.0\AceGUI-3.0.xml
+Libs\AceGUI-3.0-SharedMediaWidgets\widget.xml
+Libs\AceConfig-3.0\AceConfig-3.0.xml
+
+options.lua

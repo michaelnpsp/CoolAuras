@@ -1,0 +1,20 @@
+## Interface: 80000
+## Author: Michael
+## Title: |cFF7FFF72Cool|r Auras
+## Notes: Cooldowns & Auras tracking addon
+## SavedVariables: CoolAurasDB
+## OptionalDependencies: Masque
+
+# Ace Libraries
+
+Libs\LibStub\LibStub.lua
+Libs\LibSharedMedia-3.0\LibSharedMedia-3.0.lua
+
+init.lua
+core.lua
+keybinds.lua
+auras.lua
+cooldowns.lua
+incanterflow.lua
+arcanecharges.lua
+
