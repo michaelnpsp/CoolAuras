@@ -2,6 +2,7 @@
 ## Author: Michael
 ## Title: |cFF7FFF72Cool|r Auras |cFF4c9944Options|r
 ## Notes: CoolAuras Configuration Interface
+## Version: @project-version@
 ## LoadOnDemand: 1
 ## Dependencies: CoolAuras
 
