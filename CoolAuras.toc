@@ -1,7 +1,8 @@
-## Interface: 80000
-## Author: Michael
+## Interface: 80200
+## Author: MiCHaeL
 ## Title: |cFF7FFF72Cool|r Auras
-## Notes: Cooldowns & Auras tracking addon
+## Notes: Cooldowns & Auras Tracker
+## Version: @project-version@
 ## SavedVariables: CoolAurasDB
 ## OptionalDependencies: Masque
 
