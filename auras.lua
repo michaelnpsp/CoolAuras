@@ -4,7 +4,9 @@
 
 local addon = CoolAuras
 
-local UnitAuraByName   = addon.UnitAuraByName	
+local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+
+local UnitAuraByName   = addon.UnitAuraByName
 local ButtonSetValues  = addon.ButtonSetValues
 local ButtonSetEnabled = addon.ButtonSetEnabled
 
@@ -17,7 +19,7 @@ do
 	local events  = { target = 'PLAYER_TARGET_CHANGED', focus = 'PLAYER_FOCUS_CHANGED' }
 	local updates = { PLAYER_TARGET_CHANGED = {}, PLAYER_FOCUS_CHANGED  = {} }
 	local Notify  = CoolAuras.Notify
-	
+
 	function RegisterUnitChange(object, unit)
 		local event = events[unit]
 		if event then
@@ -28,9 +30,9 @@ do
 				objects[object] = true
 				count = count + 1
 			end
-		end	
+		end
 	end
-	
+
 	function UnregisterUnitChange(object)
 		local event = object.__unitChangeEvent
 		if event then
@@ -41,12 +43,12 @@ do
 				count = count - 1
 				if count == 0 then frame:Hide() end
 			end
-		end	
+		end
 	end
 
 	frame:Hide()
 	frame:RegisterEvent('PLAYER_TARGET_CHANGED')
-	frame:RegisterEvent('PLAYER_FOCUS_CHANGED')	
+	if not isClassic then frame:RegisterEvent('PLAYER_FOCUS_CHANGED') end
 	frame:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 	frame:SetScript('OnEvent',  function(frame, event)
 		local time    = GetTime()
@@ -60,8 +62,8 @@ do
 				for object in next, objects do
 					Notify(object, 'OnUpdate', time)
 				end
-			end	
-		end		
+			end
+		end
 	end )
 end
 
@@ -78,11 +80,11 @@ do
 				timer:Stop()
 				timer.params:SetDuration( time - %limit% )
 				timer:Play()
-			end	
+			end
 		end
 		return %cond%
 	]]
-	
+
 	local function NamesToList(names)
 		local list = {}
 		if names then
@@ -91,7 +93,7 @@ do
 				local s = strtrim( (strsplit( "#@\\\/\-\[", t[i] )) ) -- Don't remove strsplit extra brackets.
 				if #s>0 then list[s] = true end
 			end
-		end	
+		end
 		return list
 	end
 
@@ -100,26 +102,26 @@ do
 			return '>', 0
 		elseif value == false then
 			return '==', 0
-		elseif value < 0 then 
+		elseif value < 0 then
 			return '<', -value
 		else
 			return '>=', value
-		end	
+		end
 	end
 
 	function CompileFilter(db)
 		local conds, extra, list, source = {}
-		if db.timeLeftFilter then 
+		if db.timeLeftFilter then
 			local comp,value = GetTimeParams(db.timeLeftFilter)
 			extra = string.gsub( func_timeLeft, "%%limit%%", tostring(tonumber(value)-0.1) )
 			extra = string.gsub( extra, "%%cond%%", string.format('time %s %d', comp, value ) )
 		end
-		if db.durationFilter~=nil then 
+		if db.durationFilter~=nil then
 			local comp,value = GetTimeParams(db.durationFilter)
-			table.insert( conds, string.format('%s dur %s %d', (comp=='<' and 'dur>0 and' or '') , GetTimeParams(db.durationFilter) ) ) 
+			table.insert( conds, string.format('%s dur %s %d', (comp=='<' and 'dur>0 and' or '') , GetTimeParams(db.durationFilter) ) )
 		end
-		if db.casterFilter==false then 
-			table.insert( conds, "caster~='player'" ) 
+		if db.casterFilter==false then
+			table.insert( conds, "caster~='player'" )
 		end
 		if db.isBlackList~=nil then
 			table.insert( conds, string.format('%s L[name]', db.isBlackList and 'not' or '') )
@@ -127,20 +129,20 @@ do
 		end
 		if extra then
 			if #conds>0 then -- time left condition + other conditions
-				source = string.format( "return function(timer, name, dur, exp, con, caster, time, tray) if %s then %s end end",  table.concat(conds,' and '), extra )		
+				source = string.format( "return function(timer, name, dur, exp, con, caster, time, tray) if %s then %s end end",  table.concat(conds,' and '), extra )
 			else -- only time left condition
-				source = string.format( "return function(timer, name, dur, exp, con, caster, time, tray) %s end",  extra)		
+				source = string.format( "return function(timer, name, dur, exp, con, caster, time, tray) %s end",  extra)
 			end
 		elseif #conds>0 then -- no time left condition
 			source = string.format( "return function(timer, name, dur, exp, con, caster, time, tray) return %s end", table.concat(conds,' and ') )
-		end	
-		if source then	
+		end
+		if source then
 			if list then
 				return loadstring(string.format( "return function(L) %s end", source ))()(list)
 			else
 				return loadstring(source)()
 			end
-		end	
+		end
 	end
 end
 
@@ -156,14 +158,14 @@ do
 
 	-- Tooltips display
 	local function UpdateTooltip()
-		if tipUnit then 
+		if tipUnit then
 			GameTooltip:SetUnitAura(tipUnit,tipIndex,tipFilter)
 			C_Timer_After(0.1, UpdateTooltip)
-		end	
+		end
 	end
-	
+
 	local function OnMouseEnter(button)
-		local db = button.bar.db	
+		local db = button.bar.db
 		tipIndex = button.auraIndex
 		if tipIndex then
 			if tipIndex == 0 then
@@ -172,7 +174,7 @@ do
 				--RaidBuffTray_Update()
 				ConsolidatedBuffsTooltip:ClearAllPoints()
 				ConsolidatedBuffsTooltip:SetPoint(point, button, relPoint)
-				ConsolidatedBuffsTooltip:Show()			
+				ConsolidatedBuffsTooltip:Show()
 			elseif db.showTooltips then
 				tipUnit, tipFilter = db.unit, db.filter
 				GameTooltip:SetOwner(button, 'ANCHOR_' .. button.bar.tooltipAnchor)
@@ -180,9 +182,9 @@ do
 				GameTooltip:SetUnitAura(tipUnit, tipIndex, tipFilter)
 				C_Timer_After(0.1, UpdateTooltip)
 			end
-		end	
+		end
 	end
-	
+
 	local function OnMouseLeave(button)
 		if button.auraIndex == 0 then
 			ConsolidatedBuffsTooltip:ClearAllPoints()
@@ -190,14 +192,14 @@ do
 		else
 			GameTooltip:Hide()
 			tipUnit = nil
-		end	
+		end
 	end
-	
-	-- Buffs Right-Click cancellation	
+
+	-- Buffs Right-Click cancellation
 	local function OnMouseClick(button)
 		if not InCombatLockdown() then
 			CancelUnitBuff( 'player', button.auraIndex, button.bar.db.filter )
-		end	
+		end
 	end
 
 	-- Auras management
@@ -210,7 +212,7 @@ do
 		local buttons = bar.buttons
 		local timer = bar.timer
 		local filterFunc = bar.filterFunc
-		local i = 1		
+		local i = 1
 		for index=1,32 do
 			local name, tex, count, _, dur, exp, caster, _, con = UnitAura(unit, index, filter)
 			if not name then break end
@@ -221,30 +223,30 @@ do
 				button:Show()
 				i = i + 1
 				if i>max then break end
-			end	
-		end	
+			end
+		end
 		for j=bar.countVisible,i,-1 do
 			buttons[j]:Hide()
 		end
 		bar.countVisible = i - 1
 	end
-	
+
 	function auras.OnCreate( bar )
 		local db = bar.db
 		bar.filterFunc = CompileFilter(db)
 		if db.timeLeftFilter and not bar.timer then
 			local timer = bar:CreateAnimationGroup()
 			timer.params = timer:CreateAnimation()
-			timer.params:SetOrder(1)			
+			timer.params:SetOrder(1)
 			timer:SetLooping('NONE')
-			timer.expiration = 9E+16 -- arbitrary high number			
-			timer:SetScript("OnFinished", function() 
+			timer.expiration = 9E+16 -- arbitrary high number
+			timer:SetScript("OnFinished", function()
 				timer.expiration = 9E+16
-				Update(bar) 
+				Update(bar)
 			end )
 			bar.timer = timer
-		end			
-		local tips = db.showTooltips	
+		end
+		local tips = db.showTooltips
 		if tips or db.cancelBuffs then
 			addon.EnableMouse( bar,	tips and OnMouseEnter, tips and OnMouseLeave, db.cancelBuffs and OnMouseClick )
 		end
@@ -256,10 +258,10 @@ do
 	function auras.OnDestroy( bar )
 		bar:UnregisterAllEvents()
 		bar:SetScript('OnEvent', nil)
-		if bar.TextTray then 
-			bar.TextTray:SetParent(bar) 
+		if bar.TextTray then
+			bar.TextTray:SetParent(bar)
 			bar.TextTray:Hide()
-		end	
+		end
 		UnregisterUnitChange(bar)
 	end
 
@@ -275,17 +277,17 @@ do
 	local OverlayUpdate = addon.ButtonOverlayUpdate
 	local OverlayHide   = addon.ButtonOverlayHide
 	local GetTime = GetTime
-	
+
 	local aura = {}
 
 	function aura.OnUpdate(button)
 		local db = button.db
-		local texture, count, dur, exp = UnitAuraByName(db.unit, db.spell, db.filter)	
-		if not db.texture and texture then db.texture = texture end		
+		local texture, count, dur, exp = UnitAuraByName(db.unit, db.spell, db.filter)
+		if not db.texture and texture then db.texture = texture end
 		ButtonSetValues( button, texture, count, exp, GetTime() )
 		ButtonSetEnabled( button, texture~=nil )
 		local overlayReverse = button.vOverlayReverse
-		if overlayReverse~=nil then 
+		if overlayReverse~=nil then
 			OverlayUpdate( button, button.vEnabled, overlayReverse )
 		end
 	end

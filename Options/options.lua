@@ -4,6 +4,8 @@
 
 local addon = CoolAuras
 
+local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+
 ----------------------------------------------------------------
 -- More user friendly Names
 ----------------------------------------------------------------
@@ -18,8 +20,8 @@ local L = {
 -- Appearance fields
 ----------------------------------------------------------------
 APPEARANCE_FIELDS = {
-	'buttonSize', 
-	'buttonSpacing', 
+	'buttonSize',
+	'buttonSpacing',
 	'buttonBorderSize',
 	'buttonBorderColor',
 	'timerNoMasque' ,
@@ -62,7 +64,7 @@ local TEMPLATES = {
 		timerJustifyH  = 'CENTER',
 		timerJustifyV  = 'MIDDLE',
 		timerAdjustX   = 0,
-		timerAdjustY   = 0,		
+		timerAdjustY   = 0,
 		countNoMasque  = false,
 		countFontName  = 'Friz Quadrata TT',
 		countFontColor = {1,1,1},
@@ -75,7 +77,7 @@ local TEMPLATES = {
 	},
 	-- AURAS GROUP SPECIFIC OPTIONS
 	AURAS = { type = 'AURAS', unit = 'player', filter = 'HELPFUL', buttonCount = 5, },
-	-- CUSTOM GROUP SPECIFIC OPTIONS	
+	-- CUSTOM GROUP SPECIFIC OPTIONS
 	MISC = { type = 'MISC' },
 }
 local BUTTONS = {}
@@ -89,11 +91,11 @@ local general = addon.db.general
 -- groups database
 local groups  = addon.db.groups
 -- selected group database
-local group  
--- selected button database    
-local button 
+local group
+-- selected button database
+local button
 -- buttons list aceoptions table
-local optbuttons 
+local optbuttons
 
 ----------------------------------------------------------------
 -- Misc util functions & variables
@@ -121,36 +123,55 @@ if addon.playerClass == 'MAGE' then
 	buttonTypes.ARCANECHARGES = (GetSpellInfo(36032)) or 'Arcane Charges'
 end
 
+
 -- Class & Spec Information
-local classTalents 
+local classTalents
 local classNames = {}
 local classSpecs = {}
-local classNameToID = {} 
-for i=GetNumClasses(),1,-1 do
-	local classNameLoc, className, classID = GetClassInfo(i)
-	classNameToID[className] = classID
-	classNames[className]    = string.format( "|c%s%s|r", RAID_CLASS_COLORS[className].colorStr, classNameLoc )
-	classSpecs[className]    = {}
-    for i=GetNumSpecializationsForClassID(classID),1,-1 do
-		local _, specName, _, icon = GetSpecializationInfoForClassID(classID, i);
-		if specName then
-			classSpecs[className][specName] = string.format( "|T%s:0|t %s", icon, specName )
+local classNameToID = {}
+if isClassic then
+	classNames = {
+		WARRIOR = string.format("|c%sWarrior|r", RAID_CLASS_COLORS.WARRIOR.colorStr),
+		PALADIN = string.format("|c%sPaladin|r", RAID_CLASS_COLORS.PALADIN.colorStr),
+		HUNTER  = string.format("|c%sHunter|r",  RAID_CLASS_COLORS.HUNTER.colorStr),
+		ROGUE   = string.format("|c%sRogue|r",   RAID_CLASS_COLORS.ROGUE.colorStr),
+		PRIEST  = string.format("|c%sPriest|r",  RAID_CLASS_COLORS.PRIEST.colorStr),
+		SHAMAN  = string.format("|c%sShaman|r",  RAID_CLASS_COLORS.SHAMAN.colorStr),
+		MAGE    = string.format("|c%sMage|r",    RAID_CLASS_COLORS.MAGE.colorStr),
+		WARLOCK = string.format("|c%sWarlock|r", RAID_CLASS_COLORS.WARLOCK.colorStr),
+		DRUID   = string.format("|c%sDruid|r",   RAID_CLASS_COLORS.DRUID.colorStr),
+	}
+	classNameToID = { WARRIOR = 1, PALADIN = 2, HUNTER = 3, ROGUE = 4, PRIEST = 5, SHAMAN = 6, MAGE = 7, WARLOCK = 8, DRUID = 9 }
+	classSpecs[addon.playerClass] = {}
+else
+	for i=GetNumClasses(),1,-1 do
+		local classNameLoc, className, classID = GetClassInfo(i)
+		classNameToID[className] = classID
+		classNames[className]    = string.format( "|c%s%s|r", RAID_CLASS_COLORS[className].colorStr, classNameLoc )
+		classSpecs[className]    = {}
+		for i=GetNumSpecializationsForClassID(classID),1,-1 do
+			local _, specName, _, icon = GetSpecializationInfoForClassID(classID, i);
+			if specName then
+				classSpecs[className][specName] = string.format( "|T%s:0|t %s", icon, specName )
+			end
 		end
-    end
+	end
 end
 
 local function GetClassTalents(class, spec)
 	if not classTalents then
-		classTalents = { undefined ={} }
+		classTalents = { undefined = {} }
 		classTalents[addon.playerClass] = {}
-		for i=1,MAX_TALENT_TIERS do
-			for j=1,NUM_TALENT_COLUMNS do
-				classTalents.undefined[ (i-1)*3+j ] = string.format("Tier %d - %d", i,j)
+		if not isClassic then
+			for i=1,MAX_TALENT_TIERS do
+				for j=1,NUM_TALENT_COLUMNS do
+					classTalents.undefined[ (i-1)*3+j ] = string.format("Tier %d - %d", i,j)
+				end
 			end
 		end
 	end
 	local talents = classTalents[class]
-	if talents then
+	if talents and not isClassic then
 		talents = talents[spec]
 		if not talents then
 			local specID = GetSpecialization()
@@ -162,11 +183,11 @@ local function GetClassTalents(class, spec)
 					for col = 1, NUM_TALENT_COLUMNS do
 						local _, name, icon = GetTalentInfo(tier, col, specGroup)
 						talents[(tier-1)*3+col] = string.format("|T%s:0|t %s", icon,name)
-					end	
+					end
 				end
-			end	
+			end
 		end
-	end	
+	end
 	return talents or classTalents.undefined
 end
 
@@ -187,13 +208,13 @@ local alignPoints = {
 }
 
 -- Fonts
-local fontFlagsValues = { 
+local fontFlagsValues = {
 	["NONE"] = "Soft",
-	["OUTLINE"] = "Soft Thin", 
-	["THICKOUTLINE"] = "Soft Thick", 
+	["OUTLINE"] = "Soft Thin",
+	["THICKOUTLINE"] = "Soft Thick",
 	["MONOCHROME"] = "Sharp",
-	["MONOCHROME, OUTLINE"] = "Sharp Thin", 
-	["MONOCHROME, THICKOUTLINE"] = "Sharp Thick", 
+	["MONOCHROME, OUTLINE"] = "Sharp Thin",
+	["MONOCHROME, THICKOUTLINE"] = "Sharp Thick",
 }
 
 -- UnitAura Filter management functions
@@ -222,7 +243,7 @@ end
 local function AuraFilterSet( filter, value, enabled)
 	if enabled then
 		return AuraFilterAdd(filter or '',value)
-	else	
+	else
 		return AuraFilterDel(filter or '', value)
 	end
 end
@@ -233,20 +254,20 @@ do
 	function GroupReload()
 		if group and not queued then
 			queued = true
-			C_Timer.After(0.1, function() 
+			C_Timer.After(0.1, function()
 				local bar = addon.bars[group.name]
 				if bar then	addon.DestroyBar(bar) end
 				addon.ReloadBar(group)
-				queued = nil 
+				queued = nil
 			end )
-		end	
+		end
 	end
 end
 
 local function GroupLayout()
 	if group and addon.bars[group.name] then
 		addon.LayoutBar( addon.bars[group.name] )
-	end		
+	end
 end
 
 local function SetSelectedGroup(key)
@@ -284,13 +305,13 @@ local function FormatButtonName(buttondb)
 			return string.format( "|TInterface\\GossipFrame\\ActiveLegendaryQuestIcon:0|t New %s", L[buttondb.type] )
 		else
 			return FormatSpellName(name, buttondb.spellID, buttondb.texture)
-		end	
-	end	
+		end
+	end
 	return FormatItemName( buttondb.item, buttondb.itemID)
 end
-		
+
 local GetGroupList, GetNameKey
-do		
+do
 	local list = {}
 	local keys = {}
 	function GetNameKey(v)
@@ -299,9 +320,9 @@ do
 	function GetGroupList()
 		wipe(keys)
 		wipe(list)
-		for name,db in next, groups do 
+		for name,db in next, groups do
 			local class   = db.displayPlayerClass
-			local enabled = addon.GroupDisplayFilter(db)		
+			local enabled = addon.GroupDisplayFilter(db)
 			local key = string.format( "%s%s===%s", enabled and 'A' or 'B', class == addon.playerClass and 'A' or 'B', name )
 			keys[key], keys[name]  = name, key
 			list[key] = string.format("|c%s%s|r%s", enabled and "FFFFFFFF" or "FF909090", name, class and string.format( " (%s)",classNames[class] ) or '')
@@ -313,10 +334,10 @@ end
 local function GroupCopyAppearance(src)
 	if src~=group then
 		for _,field in next,APPEARANCE_FIELDS do
-			group[field] = src[field] 
+			group[field] = src[field]
 		end
 		GroupReload()
-	end	
+	end
 end
 
 local GroupTest
@@ -325,18 +346,18 @@ do
 	function GroupTest()
 		local flag = testName ~=  group.name
 		if testName then
-			local bar = addon.bars[testName] 
-			if bar then	
+			local bar = addon.bars[testName]
+			if bar then
 				for _,button in next,bar.buttons do
 					button.Count:SetText( '' )
 					button.Timer:SetText( '' )
 				end
-				addon.UpdateBar(bar) 
+				addon.UpdateBar(bar)
 			end
 			testName = nil
 		end
 		if flag then
-			local bar = addon.bars[group.name] 
+			local bar = addon.bars[group.name]
 			if bar and #bar.db==0 then
 				for _,button in next,bar.buttons do
 					button.Icon:SetTexture( "Interface\\Icons\\inv_weapon_hand_30" )
@@ -347,7 +368,7 @@ do
 				bar.countVisible = #bar.buttons
 			end
 			testName = group.name
-		end	
+		end
 	end
 end
 
@@ -358,9 +379,9 @@ end
 local MakeButtonsOptions, GetButtonOptions, GetButtonKey
 do
 	local lastKey = 1
-	local buttonKey	
+	local buttonKey
 	local groupbuttons
-	
+
 	local function Tracker(info)
 		local key = info[#info-1]
 		local optbutton = optbuttons[key]
@@ -370,13 +391,13 @@ do
 		end
 		return false
 	end
-	
+
 	local function MakeButton(buttons, buttondb, index)
 		buttons['K'..lastKey] = { type = 'group', order = index, name = FormatButtonName(buttondb), childGroups = "tab", args = {
 			General = { type = "group", order = 10, inline = true, name = '', args = BUTTONS[buttondb.type] or {}, hidden = Tracker },
 			Display = { type = "group", order = 20, inline = true, name = '', args = BUTTONS.SHARED_OPTIONS , hidden = Tracker },
 		} }
-		lastKey = lastKey + 1		
+		lastKey = lastKey + 1
 	end
 
 	function MakeButtonsOptions(force)
@@ -388,15 +409,15 @@ do
 			end
 			for i=1,#group do
 				MakeButton(optbuttons, group[i], i)
-			end	
+			end
 			groupbuttons = group
-		end	
+		end
 	end
 
 	function GetButtonKey(info)
 		return info[#info-2]
-	end	
-	
+	end
+
 	function GetButtonOptions(order)
 		local buttons = optbuttons
 		if type(order) == 'number' then
@@ -407,10 +428,10 @@ do
 			end
 		elseif order or buttonKey then
 			return buttons[order or buttonKey]
-		end		
+		end
 	end
-	
-end 
+
+end
 
 ----------------------------------------------------------------
 -- Default options handler
@@ -430,25 +451,25 @@ do
 				return unpack(v)
 			else
 				return v
-			end	
-		end	
+			end
+		end
 	end
-	
+
 	function handler:Set(info, v, ...)
 		local key = info[#info]
 		local db = self:GetDB(info) -- GetDB method must be provided in newHandler() table parameter
 		db[key] = info.type == 'color' and { v, ... } or v
 		if self.OnChange then self.OnChange(info, v, ...) end
 	end
-	
+
 	function handler:Hidden()
 		return false
 	end
-	
+
 	function newHandler(t)
 		return setmetatable( t or {}, handler_meta )
 	end
-	
+
 end
 
 ----------------------------------------------------------------
@@ -456,7 +477,7 @@ end
 ----------------------------------------------------------------
 
 addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab", get = "Get", set = "Set", args = {
-	Group = { type = "group", order = 10, name = 'Groups Setup', childGroups = "tab", 
+	Group = { type = "group", order = 10, name = 'Groups Setup', childGroups = "tab",
 		-- Group options handler
 		handler = newHandler({
 			GetDB    = function() return group end,
@@ -514,7 +535,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 			name = 'Type the Group Name',
 			order = 4,
 			get = function() return end,
-			set = function(info,newGroupName) 
+			set = function(info,newGroupName)
 				if newGroupType then
 					-- Create new Group
 					local db = CopyTable( TEMPLATES[newGroupType], CopyTable(TEMPLATES['GROUP']) )
@@ -532,7 +553,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					group.name = newGroupName
 					if bar then addon.CreateBar(group) end
 				end
-				newGroupType = nil				
+				newGroupType = nil
 			end,
 			hidden = function() return newGroupType==nil end,
 			validate = function(info,value) return not groups[value] end,
@@ -551,7 +572,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 			width = 'half',
 			name = 'Delete',
 			desc = 'Delete selected Icons Group',
-			func = function() 
+			func = function()
 				local bar = addon.bars[group.name]
 				if bar then	addon.DestroyBar(bar) end
 				groups[group.name] = nil
@@ -561,18 +582,18 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 			hidden = function() return (not group) or newGroupType end,
 		},
 		-- GROUP APPEARANCE
-		Appearance = { type = "group", order = 20, name = 'Appearance & Position', hidden = "Hidden", childGroups = "tab", 
+		Appearance = { type = "group", order = 20, name = 'Appearance & Position', hidden = "Hidden", childGroups = "tab",
 			handler = newHandler({
 				GetDB    = function() return group end,
 				Hidden   = function() return not group end,
 				OnChange = GroupLayout,
-			}),	
+			}),
 			args = {
 				---- Icons Group Layout and appearnce ------------------------------------------
 				header1 = { type = 'header', order = 0, name= 'Icons Group'},
-				anchorTo = { 
+				anchorTo = {
 					type = 'select', order = 1, name = 'Group Placement', desc = 'Select the Screen Point to Anchor this Group',
-					set = function(info,value) 
+					set = function(info,value)
 						group.left = 0
 						group.top = 0
 						group.anchorTo = value
@@ -581,11 +602,11 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					end,
 					values = alignPoints,
 				},
-				left = { 
+				left = {
 					type = 'range', order = 2, width = 'normal', name = 'Horizontal Adjust', softMin = -512, softMax = 512, step = 1,
 				},
 				top = {
-					type = 'range', order = 3, width = 'normal', name = 'Vertical Adjust', softMin = -512, softMax = 512, step = 2,					
+					type = 'range', order = 3, width = 'normal', name = 'Vertical Adjust', softMin = -512, softMax = 512, step = 2,
 				},
 				copyLayout = {
 					type = "select",
@@ -602,7 +623,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					type = 'range', order = 20, name = 'Icon Size', min = 1, softMax = 64, step = 1,
 				},
 				buttonSpacing = {
-					type = 'range', order = 30, name = 'Icon Spacing', min = 0, softMax = 64, step = 1,					
+					type = 'range', order = 30, name = 'Icon Spacing', min = 0, softMax = 64, step = 1,
 				},
 				centerButtons = {
 					type = 'toggle', order = 35, name = 'Center Icons',
@@ -613,7 +634,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				},
 				-------- Icon Border Appearance Options ------------------------------
 				buttonBorderHeader = { type = 'header', name= 'Icons Border' , order = 89, hidden = function() return general.Masque end, },
-				buttonBorderSize = { 
+				buttonBorderSize = {
 					type = 'range', order = 90, width = 'normal', name = 'Border Size', min=0, max= 16, step=1,
 					hidden = function() return general.Masque end,
 				},
@@ -646,7 +667,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				},
 				timerFontColor = {
 					type = 'color',
-					order = 104,						
+					order = 104,
 					name = 'Font Color',
 					desc = 'Color',
 				},
@@ -664,7 +685,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					order = 106,
 					name = "JustifyV",
 					desc = 'Text Vertical Justify',
-					width = 'half',					
+					width = 'half',
 					values = { MIDDLE = 'CENTER', TOP = 'TOP', BOTTOM = 'BOTTOM', },
 					disabled = function() return addon.Masque and not group.timerNoMasque end,
 				},
@@ -685,12 +706,12 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					softMax = 32,
 					name = "Vertical Adjust",
 					disabled = function() return addon.Masque and not group.timerNoMasque end,
-				},					
+				},
 				timerNoMasque = {
 					type = 'toggle', order = 120, name = 'Use Masque', desc = 'Let Masque addon to layout the Timer Text',
 					get = function() return not group.timerNoMasque end,
-					set = function(info,value) 
-						group.timerNoMasque = (not value) or nil 
+					set = function(info,value)
+						group.timerNoMasque = (not value) or nil
 						GroupLayout()
 					end,
 					hidden = function() return not addon.Masque end,
@@ -735,7 +756,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				countJustifyV = {
 					type = "select",
 					order = 207,
-					width = 'half',					
+					width = 'half',
 					name = "JustifyV",
 					desc = 'Text Vertical Justify',
 					values = { MIDDLE = 'CENTER', TOP = 'TOP', BOTTOM = 'BOTTOM', },
@@ -758,17 +779,17 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					softMax = 32,
 					name = "Vertical Adjust",
 					disabled = function() return addon.Masque and not group.countNoMasque end,
-				},					
+				},
 				countNoMasque = {
 					type = 'toggle', order = 210, name = 'Use Masque', desc = 'Let Masque addon to layout the Timer Text',
 					get = function() return not group.countNoMasque end,
-					set = function(info,value) 
-						group.countNoMasque = (not value) and true or nil 
+					set = function(info,value)
+						group.countNoMasque = (not value) and true or nil
 						GroupLayout()
 					end,
 					hidden = function() return not addon.Masque end,
 				},
-			},	
+			},
 		},
 		-- GROUP DISPLAY CONDITIONS
 		Display = { type = "group", order = 30, name = 'Display Conditions', hidden = "Hidden", args = {
@@ -777,11 +798,11 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'toggle',
 				order = 1,
 				name = 'Combat Status',
-				get = function(info) 
-					return group.displayCombat ~= nil 
+				get = function(info)
+					return group.displayCombat ~= nil
 				end,
-				set = function(info,value) 
-					group.displayCombat = value or nil 
+				set = function(info,value)
+					group.displayCombat = value or nil
 					GroupReload()
 				end,
 			},
@@ -789,16 +810,16 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'select',
 				order = 2,
 				name = 'Combat Status',
-				values = { [0] = 'Out of Combat', [1] = 'In Combat' },				
-				get = function() 
-					return (group.displayCombat==true and 1) or (group.displayCombat==false and 0) or nil 
+				values = { [0] = 'Out of Combat', [1] = 'In Combat' },
+				get = function()
+					return (group.displayCombat==true and 1) or (group.displayCombat==false and 0) or nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayCombat = (value==1)
 					GroupReload()
 				end,
-				disabled = function(info) 
-					return group.displayCombat == nil 
+				disabled = function(info)
+					return group.displayCombat == nil
 				end,
 			},
 			sep1 = { type = 'description', order = 10, name = "" },
@@ -806,10 +827,10 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'toggle',
 				order = 11,
 				name = 'Player Name',
-				get = function(info) 
-					return group.displayPlayerName ~= nil 
+				get = function(info)
+					return group.displayPlayerName ~= nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerName = value and addon.playerName or nil
 					GroupReload()
 				end,
@@ -818,12 +839,12 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'input',
 				order = 12,
 				name = 'Player Name',
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerName = value
 					GroupReload()
 				end,
-				disabled = function(info) 
-					return not group.displayPlayerName 
+				disabled = function(info)
+					return not group.displayPlayerName
 				end,
 			},
 			sep2 = { type = 'description', order = 20, name = "" },
@@ -831,36 +852,38 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'toggle',
 				order = 21,
 				name = 'Player Role',
-				get = function() 
-					return group.displayPlayerRole ~= nil 
+				get = function()
+					return group.displayPlayerRole ~= nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerRole = value and addon.playerRole or nil
 					GroupReload()
 				end,
+				hidden = function()	return isClassic end,
 			},
 			displayPlayerRole = {
 				type = 'select',
 				order = 22,
 				name = 'Player Role',
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerRole = value
 					GroupReload()
 				end,
 				values = { HEALER = 'HEALER', DAMAGER = 'DAMAGER', TANK = 'TANK' },
-				disabled = function(info) 
-					return not group.displayPlayerRole 
+				disabled = function(info)
+					return not group.displayPlayerRole
 				end,
+				hidden = function()	return isClassic end,
 			},
 			sep3 = { type = 'description', order = 30, name = "" },
 			displayPlayerClassEnabled ={
 				type = 'toggle',
 				order = 31,
 				name = 'Player Class',
-				get = function(info) 
+				get = function(info)
 					return group.displayPlayerClass ~= nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerClass = value and addon.playerClass or nil
 					group.displayPlayerSpec = nil
 					group.displayPlayerTalent = nil
@@ -872,14 +895,14 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				order = 32,
 				name = 'Player Class',
 				values = classNames,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerClass = value
 					group.displayPlayerSpec = nil
 					group.displayPlayerTalent = nil
 					GroupReload()
 				end,
-				disabled = function(info) 
-					return not group.displayPlayerClass 
+				disabled = function(info)
+					return not group.displayPlayerClass
 				end,
 			},
 			sep4 = { type = 'description', order = 40, name = "" },
@@ -887,58 +910,58 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				type = 'toggle',
 				order = 41,
 				name = 'Player Spec',
-				get = function(info) 
+				get = function(info)
 					return group.displayPlayerSpec ~= nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					if value then
 						if group.displayPlayerClass == addon.playerClass and addon.playerSpec then
 							group.displayPlayerSpec = addon.playerSpec
 						else
-							group.displayPlayerSpec = next( classSpecs[ group.displayPlayerClass ] ) 
-						end	
+							group.displayPlayerSpec = next( classSpecs[ group.displayPlayerClass ] )
+						end
 					else
-						group.displayPlayerSpec = nil 
-						group.displayPlayerTalent = nil 
+						group.displayPlayerSpec = nil
+						group.displayPlayerTalent = nil
 					end
 					GroupReload()
 				end,
-				hidden = function(info) 
-					return not group.displayPlayerClass
+				hidden = function(info)
+					return isClassic or not group.displayPlayerClass
 				end,
 			},
 			displayPlayerSpec = {
 				type  = 'select',
 				order = 42,
 				name  = 'Player Specialization',
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerSpec = value
 					GroupReload()
 				end,
-				values = function() 
-					return classSpecs[ group.displayPlayerClass ] 
+				values = function()
+					return classSpecs[ group.displayPlayerClass ]
 				end,
-				hidden = function() 
-					return not group.displayPlayerClass 
+				hidden = function()
+					return isClassic or not group.displayPlayerClass
 				end,
-				disabled = function() 
-					return not group.displayPlayerSpec 
+				disabled = function()
+					return isClassic or not group.displayPlayerSpec
 				end,
 			},
-			sep5 = { type = 'description', order = 50, name = "" },				
+			sep5 = { type = 'description', order = 50, name = "" },
 			displayPlayerTalentEnabled ={
 				type = 'toggle',
 				order = 51,
 				name = 'Player Talent',
-				get = function(info) 
-					return group.displayPlayerTalent ~= nil 
+				get = function(info)
+					return group.displayPlayerTalent ~= nil
 				end,
-				set = function(info,value) 
+				set = function(info,value)
 					group.displayPlayerTalent = value and 1 or nil
 					GroupReload()
 				end,
-				hidden = function(info) 
-					return not group.displayPlayerSpec
+				hidden = function(info)
+					return isClassic or not group.displayPlayerSpec
 				end,
 			},
 			displayPlayerTalent = {
@@ -949,37 +972,37 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					group.displayPlayerTalent = value
 					GroupReload()
 				end,
-				values = function() 
-					return GetClassTalents(group.displayPlayerClass, group.displayPlayerSpec) 
+				values = function()
+					return GetClassTalents(group.displayPlayerClass, group.displayPlayerSpec)
 				end,
-				disabled = function() 
+				disabled = function()
 					return not group.displayPlayerTalent
 				end,
-				hidden = function() 
-					return not group.displayPlayerSpec
+				hidden = function()
+					return isClassic or not group.displayPlayerSpec
 				end,
 			},
 		} },
 		-- AURAS GROUP CONFIGURATION
-		GroupAuras = { type = "group", order = 10, name = 'Auras Configuration', 
-			hidden = function() 
-				return not (group and group.type=='AURAS') 
-			end, 
+		GroupAuras = { type = "group", order = 10, name = 'Auras Configuration',
+			hidden = function()
+				return not (group and group.type=='AURAS')
+			end,
 			args = {
 				header =  { type = 'header', order = 0, name = 'Auras to Display' },
 				auraType = {
 					type = 'select', order = 10, name = 'Type',  -- width = 'half',
-					get = function() 
+					get = function()
 						return AuraFilterGet( group.filter, 'HARMFUL' ) or 'HELPFUL'
 					end,
-					set = function(info,value) 
+					set = function(info,value)
 						group.filter = AuraFilterSet(group.filter, 'HELPFUL', value=='HELPFUL')
 						group.filter = AuraFilterSet(group.filter, 'HARMFUL', value=='HARMFUL')
 						group.cancelBuffs = nil
 						group.consolidatedFilter = nil
 						group.showRaidBuffTray = nil
 						GroupReload()
-					end, 
+					end,
 					values = { HELPFUL = 'BUFFS',  HARMFUL = 'DEBUFFS' },
 				},
 				unit = {
@@ -990,7 +1013,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 						group.cancelBuffs = nil
 						group.consolidatedFilter = nil
 						group.showRaidBuffTray = nil
-						GroupReload()						
+						GroupReload()
 					end,
 				},
 				buttonCount = {
@@ -1002,11 +1025,11 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					min = 0, max = 180, step = 1,
 					get = function() return group.timeThreshold or 60 end,
 				},
-				showTooltips = { 
+				showTooltips = {
 					type = 'toggle', order = 41, name = 'Display Tooltips', desc = 'Show Aura Tooltip on Mouse Over',
 					set = function(info,value)
 						group.showTooltips = value or nil
-						GroupReload()						
+						GroupReload()
 					end,
 				},
 				showRaidBuffTray = {
@@ -1015,19 +1038,19 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 						if value then
 							group.showRaidBuffTray = true
 							group.consolidatedFilter = nil
-						else	
+						else
 							group.showRaidBuffTray = nil
 						end
 						GroupReload()
 					end,
 					hidden = function() return group.unit~='player' or AuraFilterGet( group.filter, 'HARMFUL' )~=nil end,
 				},
-				cancelBuffs = { 
+				cancelBuffs = {
 					type = 'toggle', order = 46, name = 'Cancelable Buffs',
 					desc = 'Enable Buffs cancellation using Mouse Right Clicks. Only works out of combat.',
 					set = function(info,value)
 						group.cancelBuffs = value or nil
-						GroupReload()						
+						GroupReload()
 					end,
 					hidden = function() return group.unit~='player' or strfind(group.filter or '','HARMFUL') end,
 				},
@@ -1039,17 +1062,17 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					set = function(info,value)
 						group.casterFilter = value or nil
 						group.filter = AuraFilterSet( group.filter, 'PLAYER', value)
-						GroupReload()						
+						GroupReload()
 					end,
 				},
 				enableCancelable = {
 					type = 'toggle', order = 52, width = 'normal', name = 'Cancelable Auras',
 					get = function() return not not AuraFilterGet( group.filter, 'NOT_CANCELABLE', 'CANCELABLE' ) end,
-					set = function(info,value) 
+					set = function(info,value)
 						if value then
-							group.filter = AuraFilterAdd(group.filter, 'CANCELABLE') 
+							group.filter = AuraFilterAdd(group.filter, 'CANCELABLE')
 						else
-							group.filter = AuraFilterDel(group.filter, 'NOT_CANCELABLE', 'CANCELABLE') 
+							group.filter = AuraFilterDel(group.filter, 'NOT_CANCELABLE', 'CANCELABLE')
 						end
 						GroupReload()
 					end,
@@ -1057,75 +1080,75 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				enableConsolidated = {
 					type = 'toggle', order = 53, width = 'normal', name = 'Consolidated Buffs',
 					get = function() return group.consolidatedFilter~=nil end,
-					set = function(info,value) 
-						group.consolidatedFilter = value or nil; 
-						GroupReload()						
+					set = function(info,value)
+						group.consolidatedFilter = value or nil;
+						GroupReload()
 					end,
 					hidden = function() return group.unit~='player' or group.showRaidBuffTray or strfind(group.filter or '','HARMFUL') end,
 				},
 				enableTimeLeft = {
 					type = 'toggle', order = 54, width = 'normal', name = 'Time Left',
 					get = function() return group.timeLeftFilter~=nil end,
-					set = function(info,value) 
-						group.timeLeftFilter = value and 0 or nil; 
-						GroupReload()						
+					set = function(info,value)
+						group.timeLeftFilter = value and 0 or nil;
+						GroupReload()
 					end,
 				},
 				enableDuration = {
 					type = 'toggle', order = 55, width = 'normal', name = 'Duration',
 					get = function() return group.durationFilter~=nil end,
-					set = function(info,value) 
-						group.durationFilter = value or nil 
+					set = function(info,value)
+						group.durationFilter = value or nil
 						GroupReload()
 					end,
 				},
 				enableWhiteList = {
 					type = 'toggle', order = 56, width = 'normal', name = 'WhiteList',
 					get = function() return group.isBlackList==false end,
-					set = function(info,value) 
+					set = function(info,value)
 						if value then
 							group.isBlackList = false
 						else
 							group.isBlackList = nil
 						end
-						GroupReload()						
+						GroupReload()
 					end,
 				},
 				enableBlackList = {
 					type = 'toggle', order = 57, width = 'normal', name = 'BlackList',
 					get = function() return group.isBlackList==true end,
-					set = function(info,value) 
+					set = function(info,value)
 						group.isBlackList = value and true or nil
-						GroupReload()						
+						GroupReload()
 					end,
 				},
 				------- Filters Conditions ----
-				casterHeader = { type = 'header', order = 70, name = 'Filters Conditions', hidden = function() 
+				casterHeader = { type = 'header', order = 70, name = 'Filters Conditions', hidden = function()
 					return group.casterFilter==nil and group.consolidatedFilter == nil and not AuraFilterGet(group.filter, 'NOT_CANCELABLE', 'CANCELABLE')
 				end },
 				casterCondition = {
-					type = 'select', order = 75, name = 'Display (Caster)', 
-					get = function() 
+					type = 'select', order = 75, name = 'Display (Caster)',
+					get = function()
 						return group.casterFilter and 1 or 2
 					end,
 					set = function(info,value)
 						group.casterFilter = (value==1)
 						group.filter = AuraFilterSet( group.filter, 'PLAYER', value==1)
-						GroupReload()						
+						GroupReload()
 					end,
 					values = { [1] = 'Auras casted By Me', [2] = 'Auras casted by Others' },
 					hidden = function() return group.casterFilter==nil end,
 				},
 				cancelableFilter = {
 					type = 'select', order = 76, name = 'Display (Cancelable)',
-					get = function() 
+					get = function()
 						return AuraFilterGet( group.filter, 'NOT_CANCELABLE', 'CANCELABLE' )
 					end,
-					set = function(info,value) 
-						group.filter = AuraFilterSet(group.filter, 'NOT_CANCELABLE', value=='NOT_CANCELABLE')		
+					set = function(info,value)
+						group.filter = AuraFilterSet(group.filter, 'NOT_CANCELABLE', value=='NOT_CANCELABLE')
 						group.filter = AuraFilterSet(group.filter, 'CANCELABLE',     value=='CANCELABLE')
 						GroupReload()
-					end, 
+					end,
 					values = { CANCELABLE = 'Cancelable auras', NOT_CANCELABLE = 'Non Cancelable auras' },
 					hidden = function()	return not AuraFilterGet(group.filter, 'NOT_CANCELABLE', 'CANCELABLE') end,
 				},
@@ -1135,7 +1158,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					set = function(info,value)
 						group.consolidatedFilter = (value==2)
 						GroupReload()
-					end, 
+					end,
 					values = { 'Non Consolidated Buffs', 'Consolidated Buffs' },
 					hidden = function()	return group.consolidatedFilter == nil or group.showRaidBuffTray end,
 				},
@@ -1146,8 +1169,8 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					order = 90,
 					name = 'Aura Time Left',
 					get = function() return group.timeLeftFilter>=0 and 2 or 1 end,
-					set = function(info,value) 
-						group.timeLeftFilter = math.abs(group.timeLeftFilter or 0) * (value==2 and 1 or -1) 
+					set = function(info,value)
+						group.timeLeftFilter = math.abs(group.timeLeftFilter or 0) * (value==2 and 1 or -1)
 						GroupReload()
 					end,
 					values = { [1] = 'Less than', [2] = 'Greater than' },
@@ -1161,8 +1184,8 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					softMax = 120,
 					step = 1,
 					get = function() return math.floor( math.abs(group.timeLeftFilter or 0) / 60 ) end,
-					set = function(info,value) 
-						value = (value*60 + math.abs(group.timeLeftFilter) % 60) 
+					set = function(info,value)
+						value = (value*60 + math.abs(group.timeLeftFilter) % 60)
 						group.timeLeftFilter = group.timeLeftFilter>=0 and value or -value
 						GroupReload()
 					end,
@@ -1176,10 +1199,10 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					max = 59,
 					step = 1,
 					get = function() return math.abs(group.timeLeftFilter or 0) % 60 end,
-					set = function(info,value) 
+					set = function(info,value)
 						value = math.floor( math.abs(group.timeLeftFilter) / 60 )*60 + value
 						group.timeLeftFilter = group.timeLeftFilter>=0 and value or -value
-						GroupReload()						
+						GroupReload()
 					end,
 					hidden = function() return not group.timeLeftFilter end,
 				},
@@ -1189,10 +1212,10 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					type = 'select',
 					order = 130,
 					name = 'Aura Duration',
-					get = function() 
-						return (group.durationFilter==true and 4) or (group.durationFilter==false and 3) or (group.durationFilter>=0 and 2) or 1 
+					get = function()
+						return (group.durationFilter==true and 4) or (group.durationFilter==false and 3) or (group.durationFilter>=0 and 2) or 1
 					end,
-					set = function(info,value) 
+					set = function(info,value)
 						if value == 1 then
 							group.durationFilter = -math.abs( type(group.durationFilter)=='number' and group.durationFilter or 0)
 						elseif value == 2 then
@@ -1213,8 +1236,8 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					softMax = 120,
 					step = 1,
 					get = function() return math.floor( math.abs( type(group.durationFilter)=='number' and group.durationFilter or 0) / 60 ) end,
-					set = function(info,value) 
-						value = (value*60 + math.abs(group.durationFilter) % 60) 
+					set = function(info,value)
+						value = (value*60 + math.abs(group.durationFilter) % 60)
 						group.durationFilter = group.durationFilter>=0 and value or -value
 						GroupReload()
 					end,
@@ -1229,24 +1252,24 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					max = 59,
 					step = 1,
 					get = function() return math.abs(type(group.durationFilter)=='number' and group.durationFilter or 0) % 60 end,
-					set = function(info,value) 
+					set = function(info,value)
 						value = math.floor( math.abs(group.durationFilter) / 60 )*60 + value
 						group.durationFilter = group.durationFilter>=0 and value or -value
-						GroupReload()						
+						GroupReload()
 					end,
 					disabled = function() return type(group.durationFilter)~='number' end,
 					hidden   = function() return group.durationFilter==nil end,
-				},	
+				},
 				-- WhiteList & BlackList Conditions
 				spellsHeader1 = { type = 'header', order = 500, name = 'WhiteList Filter', hidden = function() return not (group.isBlackList==false) end },
-				spellsHeader2 = { type = 'header', order = 500, name = 'BlackList Filter', hidden = function() return not (group.isBlackList==true) end },	
+				spellsHeader2 = { type = 'header', order = 500, name = 'BlackList Filter', hidden = function() return not (group.isBlackList==true) end },
 				spells = {
 					type = 'input',
 					order = 510,
 					name = '',
 					width = 'full',
 					multiline = 7,
-					set = function(info,value)	
+					set = function(info,value)
 						group.spells = value
 						GroupReload()
 					end,
@@ -1255,21 +1278,21 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 			},
 		},
 		-- CUSTOM GROUP CONFIGURATION
-		GroupCustom = {  type = "group", order = 10, name = 'Icons Configuration', hidden = "Hidden", 
+		GroupCustom = {  type = "group", order = 10, name = 'Icons Configuration', hidden = "Hidden",
 			handler = newHandler({
 				GetDB = function(_, info) return group[ optbuttons[GetButtonKey(info)].order ] end,
 				Hidden = function()	return not group end,
 				OnChange = GroupReload,
-			}), 
+			}),
 			disabled = MakeButtonsOptions,
-			hidden = function() return not (group and group.type == 'MISC') end, 
+			hidden = function() return not (group and group.type == 'MISC') end,
 			args = {
 				newIcon = {
 					type = 'select',
 					order = 0,
 					name = 'Create a New Icon',
 					get = function() end,
-					set = function(info, type) 
+					set = function(info, type)
 						local butdb = CopyTable(TEMPLATES[type])
 						butdb.type = type
 						tinsert(group, 1, butdb)
@@ -1291,7 +1314,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 							local j = i>1 and i-1 or #group
 							group[i], group[j] = group[j], group[i]
 							GetButtonOptions(j).order = i
-							button.order = j 
+							button.order = j
 							GroupReload()
 						end
 					end,
@@ -1303,14 +1326,14 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					name = 'Down',
 					desc = 'Move selected Icon Down',
 					width = 'half',
-					func = function() 
+					func = function()
 						local button = GetButtonOptions()
 						if button then
 							local i = button.order
 							local j = i<#group and i+1 or 1
 							group[i], group[j] = group[j], group[i]
-							GetButtonOptions(j).order = i			
-							button.order = j 
+							GetButtonOptions(j).order = i
+							button.order = j
 							GroupReload()
 						end
 					end,
@@ -1322,19 +1345,19 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					name = 'Delete',
 					desc = 'Delete Selected Icon',
 					width = 'half',
-					func = function() 
+					func = function()
 						local button = GetButtonOptions()
 						if button then
 							tremove( group, button.order )
 							GroupReload()
 							MakeButtonsOptions(true)
-						end		
+						end
 					end,
 					confirm = function() return 'Are you sure do you want to delete the selected icon ?' end,
 					hidden = function() return not (group and #group>0) end,
 				},
 				--- HERE BUTTONS ARE ADDED DYNAMICALLY
-			}	
+			}
 		},
 	} },
 	Misc  = { type = "group", order = 20, name = 'Misc. Options', childGroups = "tab", args = {
@@ -1365,7 +1388,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					addon.HideBlizzardFrames()
 				else
 					ReloadUI()
-				end	
+				end
 			end,
 			confirm = function(info,value)
 				return (not value) and 'UI will be reloaded to Reenable Blizzard Buff Frames. Are you sure ?'
@@ -1380,7 +1403,7 @@ optbuttons = addon.OptionsTable.args.Group.args.GroupCustom.args
 -------------------------------------------------------------------------------------
 -- BUTTONS SHARED OPTIONS (FOR CUSTOMGROUPS)
 -------------------------------------------------------------------------------------
-BUTTONS.SHARED_OPTIONS = {	
+BUTTONS.SHARED_OPTIONS = {
 	headerOpacity = { type = 'header', order = 10, name = 'Icon Opacity' },
 	enabled = {
 		type = "range",
@@ -1388,13 +1411,13 @@ BUTTONS.SHARED_OPTIONS = {
 		name = 'Enabled Opacity',
 		desc = function()
 			return button.type == 'AURA' and 'Icon Opacity when the Aura Exists. Select zero to hide the icon.' or 'Icon Opacity when the spell is ready to use. Choose zero to hide the icon.'
-		end,	
+		end,
 		min = 0,
 		max = 1,
 		step = 0.01,
 		get = function(info) return button.enabled end,
 		set = function(info,value)
-			button.enabled = value>0 and value or nil 
+			button.enabled = value>0 and value or nil
 			GroupReload()
 		end
 	},
@@ -1409,7 +1432,7 @@ BUTTONS.SHARED_OPTIONS = {
 		max = 1,
 		step = 0.01,
 		get = function(info) return button.disabled end,
-		set = function(info,value)	
+		set = function(info,value)
 			button.disabled = value>0 and value or nil
 			GroupReload()
 		end
@@ -1419,7 +1442,7 @@ BUTTONS.SHARED_OPTIONS = {
 		type = 'toggle',
 		name = 'Display TimeLeft',
 		order = 21,
-		get = function(info) 
+		get = function(info)
 			return (button.timeThreshold or 60)>0
 		end,
 		set = function(info,value)
@@ -1433,10 +1456,10 @@ BUTTONS.SHARED_OPTIONS = {
 		get = function()
 			return button.timeThreshold or 60
 		end,
-		disabled = function(info) 
-			return button.timeThreshold==0 
+		disabled = function(info)
+			return button.timeThreshold==0
 		end,
-	},	
+	},
 	miscHeader = { type = 'header', order = 400, name = 'Miscellaneous', hidden = function() return button.type ~= 'COOLDOWN' end, },
 	gcdEnabled= {
 		type = 'toggle', order = 410, name = 'Display GCD', desc = "Display Global Cooldown Spiral",
@@ -1447,8 +1470,8 @@ BUTTONS.SHARED_OPTIONS = {
 		hidden = function() return button.type ~= 'COOLDOWN' end,
 	},
 	countThreshold = {
-		type = 'range', order = 430, 
-		name = 'Charges Threshold', 
+		type = 'range', order = 430,
+		name = 'Charges Threshold',
 		desc = 'Minimum value to display the number of charges.',
 		min = 0, softMax = 5, step = 1,
 		get = function() return button.countThreshold or 1 end,
@@ -1457,29 +1480,31 @@ BUTTONS.SHARED_OPTIONS = {
 			GroupReload()
 		end,
 		hidden = function() return button.type ~= 'COOLDOWN' end,
-	},		
-	displaySep = { type = 'header', order = 500, name = 'Display Conditions' },
+	},
+	displaySep = { type = 'header', order = 500, name = 'Display Conditions', hidden = function() return isClassic end },
 	displayPlayerTalentEnabled = {
 		type = 'toggle',
 		order = 510,
 		name = 'Player Talent',
-		get = function(info) 
-			return button.displayPlayerTalent ~= nil 
+		get = function(info)
+			return button.displayPlayerTalent ~= nil
 		end,
-		set = function(info,value) 
+		set = function(info,value)
 			button.displayPlayerTalent = value and 1 or nil
 		end,
+		hidden = function() return isClassic end,
 	},
 	displayPlayerTalent = {
 		type = 'select',
 		order = 520,
 		name = 'Player Talent',
-		values = function(info) 
+		values = function(info)
 			return GetClassTalents(group.displayPlayerClass, group.displayPlayerSpec or addon.playerSpec)
 		end,
-		disabled = function(info) 
+		disabled = function(info)
 			return not button.displayPlayerTalent
 		end,
+		hidden = function() return isClassic end,
 	},
 }
 
@@ -1491,14 +1516,14 @@ TEMPLATES.AURA = { type = 'AURA', filter = 'HELPFUL',  spell = '',  unit = 'play
 BUTTONS.AURA = {
 	auraType = {
 		type = 'select', order = 10, name = 'Aura Type', width = 'normal',
-		get = function(info) 
+		get = function(info)
 			return AuraFilterGet( button.filter, 'HARMFUL' ) or 'HELPFUL'
 		end,
-		set = function(info,value) 
+		set = function(info,value)
 			button.filter = AuraFilterSet(button.filter, 'HELPFUL', value=='HELPFUL')
 			button.filter = AuraFilterSet(button.filter, 'HARMFUL', value=='HARMFUL')
 			GroupReload()
-		end, 
+		end,
 		values = { HELPFUL = 'BUFF',  HARMFUL = 'DEBUFF' },
 	},
 	unit = {
@@ -1507,7 +1532,7 @@ BUTTONS.AURA = {
 	},
 	castByMe = {
 		type = 'toggle', order = 30, name = 'Cast be Me',
-		get = function(info) 
+		get = function(info)
 			return not not AuraFilterGet( button.filter, 'PLAYER' )
 		end,
 		set = function(info,value)
@@ -1535,7 +1560,7 @@ BUTTONS.AURA = {
 			button.spellID = spellID
 			button.texture = texture
 			GetButtonOptions().name = FormatSpellName( spell, spellID, texture )
-			GroupReload()			
+			GroupReload()
 		end,
 	},
 	overlayEnabled = {
@@ -1548,7 +1573,7 @@ BUTTONS.AURA = {
 -------------------------------------------------------------------------------------
 
 TEMPLATES.COOLDOWN = { type = 'COOLDOWN',  spell = '',  timeThreshold = 300, enabled = 1, disabled = 0.4 }
-	
+
 BUTTONS.COOLDOWN = {
 	spell = {
 		type = 'input',
@@ -1563,26 +1588,26 @@ BUTTONS.COOLDOWN = {
 			countThreshold = 2
 			if tonumber(spell) then
 				spellName,_,texture,_,_,_,spellID = GetSpellInfo(spell)
-				if spellName then 
+				if spellName then
 					if GetSpellCharges(spellID) then
 						countThreshold = 1
-					end	
+					end
 				else
-					itemName, itemLink = GetItemInfo(spell) 
+					itemName, itemLink = GetItemInfo(spell)
 					if not itemName then return end
 					itemID = spell
 				end
 			else
-				itemName, itemLink, _,_,_,_,_,_,_, texture = GetItemInfo(spell) 
+				itemName, itemLink, _,_,_,_,_,_,_, texture = GetItemInfo(spell)
 				if itemName then
 					itemID = string.match(itemLink, 'item:(%d+):')
 				else
-					spellName,_,texture,_,_,_,spellID = GetSpellInfo(spell)	
+					spellName,_,texture,_,_,_,spellID = GetSpellInfo(spell)
 					if not spellName then spellName = spell	end
 				end
 			end
 			button.texture = texture
-			button.countThreshold = countThreshold			
+			button.countThreshold = countThreshold
 			if itemName then
 				button.item,  button.itemID  = itemName, itemID
 				button.spell, button.spellID = nil, nil
@@ -1594,7 +1619,7 @@ BUTTONS.COOLDOWN = {
 			end
 			GroupReload()
 		end,
-	},	
+	},
 	overlayHeader = { type = 'header', order = 6, name = 'Display Overlay Glow' },
 	overlayEnabled = {
 		type = 'toggle', order = 7, name = 'When spell procs', desc = "Display overlay glowing border when a reactive proc-like spell becomes active.",
@@ -1645,11 +1670,11 @@ function addon.OnChatCommand()
 	local LIB = LibStub("AceConfigDialog-3.0")
 	LIB[ LIB.OpenFrames.CoolAuras and 'Close' or 'Open' ](LIB, 'CoolAuras')
 end
- 	
+
 function addon:InitializeOptionsTable()
 	LibStub("AceConfig-3.0"):RegisterOptionsTable("CoolAuras", self.OptionsTable)
 	LibStub("AceConfigDialog-3.0"):SetDefaultSize("CoolAuras", 800, 655)
 	SlashCmdList[ addon.addonName:upper() ] = self.OnChatCommand
-	self.OnChatCommand() 
+	self.OnChatCommand()
 	self.InitializeOptionsTable = nil
 end

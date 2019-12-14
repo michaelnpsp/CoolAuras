@@ -6,9 +6,17 @@ local addon  = CoolAuras
 local Media  = LibStub("LibSharedMedia-3.0", true)
 
 ----------------------------------------------------------------
--- 
+--
 ----------------------------------------------------------------
 
+addon.playerClass = select(2,UnitClass('player'))
+addon.playerName  = UnitName('player')
+
+----------------------------------------------------------------
+--
+----------------------------------------------------------------
+
+local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
 local next = next
 local tinsert = table.insert
 local tremove = table.remove
@@ -34,7 +42,7 @@ do
 		end
 	end
 end
-	
+
 ----------------------------------------------------------------
 --
 ----------------------------------------------------------------
@@ -49,7 +57,7 @@ do
 			frame:SetAlpha(1)
 			frame:Show()
 			return frame
-		end	
+		end
 	end
 
 	function FrameFactory_Put( frame, className )
@@ -57,7 +65,7 @@ do
 		frame:SetParent(nil)
 		tinsert( frames[className or frame.className], frame )
 	end
-	
+
 	addon.FrameFactory_Get = FrameFactory_Get
 	addon.FrameFactory_Put = FrameFactory_Put
 end
@@ -69,22 +77,22 @@ end
 local Notify
 do
 	local events = {}
-	
+
 	function Notify(object, event, ...)
 		if object then
 			local func = events[object.className]
 			if func then
 				func = func[event]
-				if func then 
-					return func(object, ...) 
+				if func then
+					return func(object, ...)
 				end
-			end	
-		end	
+			end
+		end
 	end
-	
+
 	addon.events = events
 	addon.Notify = Notify
-end	
+end
 
 ----------------------------------------------------------------
 --
@@ -93,9 +101,9 @@ end
 local ButtonSetCountdown
 do
 	local C_Timer_After = C_Timer.After
-	
+
 	local buttons = {}
-	
+
 	local function CountdownTimer()
 		local time = GetTime()
 		for Timer, expiration in next,buttons do
@@ -116,13 +124,13 @@ do
 						Timer:SetFormattedText( "%dm", dur/60 )
 					end
 				end
-			end	
+			end
 		end
 		if next(buttons) then
 			C_Timer_After(0.05, CountdownTimer)
-		end	
+		end
 	end
-	
+
 	function ButtonSetCountdown(button, expiration, time)
 		if expiration and expiration>0 then
 			if not next(buttons) then
@@ -141,11 +149,11 @@ do
 			button.vExpiration = nil
 		end
 	end
-	
-end	
+
+end
 
 ----------------------------------------------------------------
--- OVERLAY (SPELL ACTIVATION ALERT) 
+-- OVERLAY (SPELL ACTIVATION ALERT)
 ----------------------------------------------------------------
 
 local ButtonOverlayShow, ButtonOverlayHide, ButtonOverlayUpdate
@@ -162,7 +170,7 @@ do
 			overlay.animOut:Stop()
 		else
 			local w,h = self:GetSize()
-			overlay = tremove( unused ) or CreateOverlay() 
+			overlay = tremove( unused ) or CreateOverlay()
 			overlay:SetParent(self)
 			overlay:ClearAllPoints()
 			overlay:SetSize(w * 1.4, h * 1.4);
@@ -170,32 +178,32 @@ do
 			overlay:SetPoint("BOTTOMRIGHT", self, "BOTTOMRIGHT", w * 0.2, -h * 0.2);
 			overlay:Show()
 			self.overlay = overlay
-		end	
+		end
 		overlay.animIn:Play()
 	end
 	function ButtonOverlayHide(self)
 		local overlay = self.overlay
-		if overlay then		
+		if overlay then
 			tinsert( unused, overlay)
 			self.overlay =  nil
 			overlay:Hide()
 			overlay:SetParent(nil)
-		end	
+		end
 	end
 	function ButtonOverlayUpdate(button, enabled, reverse)
 		local overlay = button.overlay
-		if reverse then 
-			enabled = not enabled 
+		if reverse then
+			enabled = not enabled
 		else
 			enabled = not not enabled
 		end
 		if enabled ~= (overlay~=nil) then
-			if overlay then			
+			if overlay then
 				ButtonOverlayHide(button)
 			else
 				ButtonOverlayShow(button)
 			end
-		end		
+		end
 	end
 end
 
@@ -211,14 +219,14 @@ end
 
 local function GroupDisplayFilter(db)
 	return	addon.playerName  == (db.displayPlayerName  or addon.playerName)  and
-			addon.playerRole  == (db.displayPlayerRole  or addon.playerRole)  and		
+			addon.playerRole  == (db.displayPlayerRole  or addon.playerRole)  and
 			addon.playerClass == (db.displayPlayerClass or addon.playerClass) and
-			addon.playerSpec  == (db.displayPlayerSpec  or addon.playerSpec)  and 
-			(not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent)) 						
+			addon.playerSpec  == (db.displayPlayerSpec  or addon.playerSpec)  and
+			(not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent))
 end
 
 local function ButtonDisplayFilter(db, button)
-	return not Notify(button, 'OnDisableCheck') and 
+	return not Notify(button, 'OnDisableCheck') and
 		  (not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent))
 end
 
@@ -227,14 +235,14 @@ end
 ----------------------------------------------------------------
 
 -- Useful Points
-addon.opositePoints = {  
-	LEFT = 'RIGHT', 
-	RIGHT = 'LEFT', 
-	TOP = 'BOTTOM', 
-	BOTTOM = 'TOP', 
-	TOPLEFT = 'BOTTOMRIGHT', 
-	TOPRIGHT = 'BOTTOMLEFT', 
-	BOTTOMLEFT = 'TOPRIGHT', 
+addon.opositePoints = {
+	LEFT = 'RIGHT',
+	RIGHT = 'LEFT',
+	TOP = 'BOTTOM',
+	BOTTOM = 'TOP',
+	TOPLEFT = 'BOTTOMRIGHT',
+	TOPRIGHT = 'BOTTOMLEFT',
+	BOTTOMLEFT = 'TOPRIGHT',
 	BOTTOMRIGHT = 'TOPLEFT',
 }
 
@@ -254,22 +262,22 @@ addon.tooltipAnchors = {
 local masqueLayers = { "FloatingBG", "AutoCast", "AutoCastable", "Backdrop", "Checked", "Cooldown", "Count", "Disabled", "Flash", "Highlight", "HotKey", "Name", "Pushed" }
 
 -- Created Bars
-local bars = {} 
-		
+local bars = {}
+
 local function EnableMasque()
 	if addon.db.general.Masque then
 		addon.Masque = LibStub('Masque', true)
-	end	
+	end
 end
 
 local function UpdateBar(bar)
 	local time = GetTime()
-	Notify( bar, 'OnUpdate', time ) 
+	Notify( bar, 'OnUpdate', time )
 	if #bar.db>0 then
 		for _,button in next,bar.buttons do
 			if not button.isHidden then
 				Notify( button, 'OnUpdate', time)
-			end	
+			end
 		end
 	end
 end
@@ -279,13 +287,13 @@ local function UpdateBarSize(bar)
 	if count ~= bar.countVisiblePrev then
 		bar:SetBarWidth( count * ( bar.buttonSize + bar.buttonSpacing) - bar.buttonSpacing )
 		bar.countVisiblePrev = count
-	end	
+	end
 end
 
 local function ButtonSetIcon(button, texture)
-	if texture then	
-		button.Icon:SetTexture(texture)	
-	end	
+	if texture then
+		button.Icon:SetTexture(texture)
+	end
 end
 
 local function ButtonSetCount(button, count)
@@ -293,30 +301,30 @@ local function ButtonSetCount(button, count)
 end
 
 local function ButtonSetValues( button, texture, count, expiration, time)
-	if texture then	button.Icon:SetTexture(texture)	end	
+	if texture then	button.Icon:SetTexture(texture)	end
 	button.Count:SetText( (count or 0)>=button.countThreshold  and count or '' )
 	ButtonSetCountdown(button, expiration, time)
 end
 
 local function ButtonSetEnabled( button, enabled )
 	local alpha = enabled and button.enabledAlpha or button.disabledAlpha
-	button:SetAlpha(alpha)	
+	button:SetAlpha(alpha)
 	if alpha>0 then
-		if button.isHidden then	
+		if button.isHidden then
 			local bar = button.bar
-			local point, relativeTo, relPoint, x, y = button:GetPoint(1)			
-			button.isHidden = nil		
-			bar.countVisible = bar.countVisible + 1		
+			local point, relativeTo, relPoint, x, y = button:GetPoint(1)
+			button.isHidden = nil
+			bar.countVisible = bar.countVisible + 1
 			button:SetPoint(point, relativeTo, relPoint, x+bar.buttonDespX, y+bar.buttonDespY )
-		end	
+		end
 	elseif not button.isHidden then
 		local bar = button.bar
 		bar.countVisible = bar.countVisible - 1
 		button.isHidden = true
-		local point, relativeTo, relPoint, x, y = button:GetPoint(1)		
+		local point, relativeTo, relPoint, x, y = button:GetPoint(1)
 		button:SetPoint(point, relativeTo, relPoint, x-bar.buttonDespX, y-bar.buttonDespY )
 	end
-	button.vEnabled = enabled	
+	button.vEnabled = enabled
 end
 
 local function CreateButton(bar, type)
@@ -326,7 +334,7 @@ local function CreateButton(bar, type)
 	button.Count        = button:CreateFontString()
 	button.Timer        = button:CreateFontString()
 	button.Timer.button = button
-	button:SetNormalTexture( button.Normal )		
+	button:SetNormalTexture( button.Normal )
 	button.className    = type
 	return button
 end
@@ -342,15 +350,15 @@ local function AddButton(bar, db)
 	button.disabledAlpha = db and (db.disabled or 0) or 0
 	button.countThreshold = 2
 	button.isCreated = (not db) or ButtonDisplayFilter(db, button)
-	if button.isCreated then 
+	if button.isCreated then
 		button.isHidden = nil
 		bar.countVisible = bar.countVisible + 1
 		button:SetAlpha(button.enabledAlpha)
-		Notify( button, 'OnCreate' ) 
+		Notify( button, 'OnCreate' )
 	else
 		button.isHidden = true
 		button:SetAlpha(0)
-	end	
+	end
 end
 
 local function DelButton(bar, index)
@@ -367,7 +375,7 @@ local function CreateButtons(bar, db)
 	local count = db.buttonCount or #db
 	for i=1,count do
 		AddButton(bar, db[i])
-	end	
+	end
 end
 
 local function DestroyButtons(bar)
@@ -379,11 +387,11 @@ end
 
 local function LayoutButton(button, bar, db)
 	local Count = button.Count
-	local Timer = button.Timer		
+	local Timer = button.Timer
 	local countMasque = not db.countNoMasque
 	local timerMasque = not db.timerNoMasque
-	Count:SetFont(Media:Fetch('font', db.countFontName) or FONT_DEFAULT, db.countFontSize or 9,  db.countFontFlags or 'OUTLINE')		
-	Timer:SetFont(Media:Fetch('font', db.timerFontName) or FONT_DEFAULT, db.timerFontSize or 11, db.timerFontFlags or 'OUTLINE')			
+	Count:SetFont(Media:Fetch('font', db.countFontName) or FONT_DEFAULT, db.countFontSize or 9,  db.countFontFlags or 'OUTLINE')
+	Timer:SetFont(Media:Fetch('font', db.timerFontName) or FONT_DEFAULT, db.timerFontSize or 11, db.timerFontFlags or 'OUTLINE')
 	if addon.Masque then
 		local ButtonData = button.ButtonData
 		if not ButtonData then
@@ -394,10 +402,10 @@ local function LayoutButton(button, bar, db)
 			ButtonData.Icon   = button.Icon
 			ButtonData.Normal = button.Normal
 			button.ButtonData = ButtonData
-		end	
+		end
 		ButtonData.Duration = timerMasque and button.Timer or false
 		ButtonData.Count    = countMasque and button.Count or false
-		Notify(button, 'OnMasqueLayout', ButtonData)		
+		Notify(button, 'OnMasqueLayout', ButtonData)
 		bar.Masque:AddButton(button, ButtonData)
 	else
 		local borderSize = db.buttonBorderSize or 1
@@ -415,7 +423,7 @@ local function LayoutButton(button, bar, db)
 		Icon:ClearAllPoints()
 		Icon:SetPoint( 'TOPLEFT', borderSize, -borderSize )
 		Icon:SetPoint( 'BOTTOMRIGHT', -borderSize, borderSize)
-	end	
+	end
 	if not (bar.Masque and countMasque) then
 		Count:SetParent(button)
 		Count:SetDrawLayer('OVERLAY')
@@ -425,7 +433,7 @@ local function LayoutButton(button, bar, db)
 		Count:ClearAllPoints()
 		Count:SetPoint( 'CENTER' )
 		Count:SetWidth( bar.buttonSize + (db.countAdjustX or 0) )
-		Count:SetHeight( bar.buttonSize + (db.countAdjustY or 0) )	
+		Count:SetHeight( bar.buttonSize + (db.countAdjustY or 0) )
 	end
 	if not (bar.Masque and timerMasque) then
 		Timer:SetParent(button)
@@ -436,17 +444,17 @@ local function LayoutButton(button, bar, db)
 		Timer:ClearAllPoints()
 		Timer:SetPoint( 'CENTER' )
 		Timer:SetWidth( bar.buttonSize + (db.timerAdjustX or 0) )
-		Timer:SetHeight( bar.buttonSize + (db.timerAdjustY or 0) )		
+		Timer:SetHeight( bar.buttonSize + (db.timerAdjustY or 0) )
 	end
 	Timer.timeThreshold = button.db and button.db.timeThreshold or db.timeThreshold or 60
-	Notify( button , 'OnLayout' )	
+	Notify( button , 'OnLayout' )
 end
 
 local function LayoutButtons(bar)
 	local despX, despY, bDespX, bDespY
 	local db = bar.db
 	local point = db.buttonAnchor
-	local buttonSize = db.buttonSize	
+	local buttonSize = db.buttonSize
 	local relPoint = addon.opositePoints[point]
 	bar.buttonSize    = buttonSize
 	bar.buttonSpacing = db.buttonSpacing
@@ -456,11 +464,11 @@ local function LayoutButtons(bar)
 		despX, despY     = db.buttonSpacing, 0
 		bDespX, bDespY   = despX + buttonSize, 0
 	else
-		bar.SetBarWidth  = bar.SetHeight 
+		bar.SetBarWidth  = bar.SetHeight
 		bar.SetBarHeight = bar.SetWidth
 		despY, despX     = -db.buttonSpacing, 0
 		bDespY, bDespX   = -(db.buttonSpacing+buttonSize), 0
-	end		
+	end
 	if db.buttonAnchor == 'RIGHT' or db.buttonAnchor == 'BOTTOM' then
 		despX, despY   = -despX, -despY
 		bDespX, bDespY = -bDespX, -bDespY
@@ -479,7 +487,7 @@ local function LayoutButtons(bar)
 		else
 			button:SetPoint(point, prev, prevRel, prevX, prevY)
 		end
-		LayoutButton(button, bar, db)		
+		LayoutButton(button, bar, db)
 		prev, prevRel, prevX, prevY = button, relPoint, despX, despY
 	end
 end
@@ -490,19 +498,19 @@ local function ReloadButtons(bar)
 		if button.isCreated ~= ButtonDisplayFilter(button.db, button) then
 			if button.isCreated then
 				ButtonSetCountdown(button)
-				bar.countVisible = bar.countVisible - (button.isHidden and 0 or 1)				
+				bar.countVisible = bar.countVisible - (button.isHidden and 0 or 1)
 				button.isCreated = false
 				button.isHidden  = true
-				button:SetAlpha(0)	
+				button:SetAlpha(0)
 				Notify( button, 'OnDestroy' )
 			else
 				bar.countVisible = bar.countVisible + 1
-				button.isCreated = true				
+				button.isCreated = true
 				button.isHidden = nil
-				button:SetAlpha(button.enabledAlpha)				
+				button:SetAlpha(button.enabledAlpha)
 				Notify( button, 'OnCreate' )
 			end
-			relayout = true			
+			relayout = true
 		end
 	end
 	if relayout then
@@ -513,18 +521,18 @@ end
 
 local function LayoutBar(bar)
 	local db = bar.db
-	local anchorTo = db.anchorTo or 'CENTER'	
-	bar.tooltipAnchor = addon.tooltipAnchors[anchorTo]	
-	bar:ClearAllPoints()	
+	local anchorTo = db.anchorTo or 'CENTER'
+	bar.tooltipAnchor = addon.tooltipAnchors[anchorTo]
+	bar:ClearAllPoints()
 	bar:SetScript('OnUpdate', db.centerButtons and UpdateBarSize or nil)
 	bar:SetPoint( anchorTo, UIParent, anchorTo, db.left, db.top )
-	local reskin = bar.Masque	
+	local reskin = bar.Masque
 	if addon.Masque and not reskin then
-		bar.Masque = addon.Masque:Group("CoolAuras", bar.barName ) 
-	end	
+		bar.Masque = addon.Masque:Group("CoolAuras", bar.barName )
+	end
 	LayoutButtons(bar)
-	if reskin then 
-		barMasque:ReSkin() 
+	if reskin then
+		barMasque:ReSkin()
 	end
 end
 
@@ -533,9 +541,9 @@ local function DisplayBar(bar)
 	local isVisible = displayCombat == nil or displayCombat == addon.inCombat
 	if isVisible ~= not not bar:IsShown() then
 		bar:SetShown( isVisible )
-		if isVisible then 
-			UpdateBar(bar) 
-		end	
+		if isVisible then
+			UpdateBar(bar)
+		end
 	end
 end
 
@@ -543,9 +551,9 @@ local function CreateBar( db )
 	local bar = addon.FrameFactory_Get( db.type ) or CreateFrame('Frame')
 	bar:Hide()
 	bar:SetParent(UIParent)
-	bars[db.name] = bar	
-	bar.db        = db		
-	bar.className = db.type	
+	bars[db.name] = bar
+	bar.db        = db
+	bar.className = db.type
 	bar.barName   = db.name
 	bar.buttons   = bar.buttons or {}
 	CreateButtons(bar, db)
@@ -591,18 +599,18 @@ end
 local function EnableMouse(bar, onEnter, onLeave, onClick)
 	for _,button in next,bar.buttons do
 		button:EnableMouse(true)
-		if onEnter then 
-			button:SetScript("OnEnter", onEnter) 
+		if onEnter then
+			button:SetScript("OnEnter", onEnter)
 		end
-		if onLeave then 
-			button:SetScript("OnLeave", onLeave) 
+		if onLeave then
+			button:SetScript("OnLeave", onLeave)
 		end
 		if onClick then
 			button:RegisterForClicks('RightButtonUp')
 			button:SetScript('OnClick', onClick)
-		end	
+		end
 	end
-end	
+end
 
 ----------------------------------------------------------------
 -- Talents changes
@@ -610,11 +618,12 @@ end
 local UpdateTalents
 do
 	local queued
+	local GetSpecialization = GetSpecialization or function() end
 	function UpdateTalents(queue)
 		if queue then
-			if not queued then 
+			if not queued then
 				queued = true
-				C_Timer.After(0.1,UpdateTalents) 
+				C_Timer.After(0.1,UpdateTalents)
 			end
 		else
 			local specIndex = GetSpecialization()
@@ -651,13 +660,13 @@ local HideBlizzardFrames
 do
 	local function ReHideFrame(frame)
 		if not InCombatLockdown() then frame:Hide() end
-	end	
+	end
 	function HideBlizzardFrames()
 		local function HideFrame(frame)
 			frame:SetParent(addon.hiddenFrame)
-			frame:SetScript("OnUpdate", nil)				
+			frame:SetScript("OnUpdate", nil)
 			frame:HookScript("OnShow", ReHideFrame)
-			frame:Hide()	
+			frame:Hide()
 			frame:UnregisterAllEvents()
 		end
 		if addon.db.general.disableBlizzard then
@@ -668,8 +677,8 @@ do
 			HideBlizzardFrames = nil
 			addon.HideBlizzardFrames = nil
 		end
-	end	
-	addon.HideBlizzardFrames = HideBlizzardFrames	
+	end
+	addon.HideBlizzardFrames = HideBlizzardFrames
 end
 
 ----------------------------------------------------------------
@@ -685,7 +694,7 @@ local function OnGameEvent(frame, event)
 		HideBlizzardFrames()
 	elseif event == 'UPDATE_BINDINGS' then
 		addon.ResetBindings()
-	end	
+	end
 end
 
 ----------------------------------------------------------------
@@ -695,7 +704,7 @@ end
 addon.COLORWHITE    = COLORWHITE
 addon.COLORBLACK    = COLORBLACK
 
-addon.bars          = bars	
+addon.bars          = bars
 addon.DisplayBar    = DisplayBar
 addon.ReloadBar     = ReloadBar
 addon.ReloadBars    = ReloadBars
@@ -725,15 +734,17 @@ addon.ButtonSetEnabled    = ButtonSetEnabled
 ----------------------------------------------------------------
 
 function addon:Run(frame)
-	frame:SetScript('OnEvent', OnGameEvent)	
-	frame:RegisterEvent( 'PLAYER_TALENT_UPDATE' )
-	frame:RegisterEvent( 'PLAYER_SPECIALIZATION_CHANGED' )	
+	frame:SetScript('OnEvent', OnGameEvent)
+	if not isClassic then
+		frame:RegisterEvent( 'PLAYER_TALENT_UPDATE' )
+		frame:RegisterEvent( 'PLAYER_SPECIALIZATION_CHANGED' )
+	end
 	frame:RegisterEvent( 'PLAYER_REGEN_DISABLED' )
 	frame:RegisterEvent( 'PLAYER_REGEN_ENABLED' )
 	frame:RegisterEvent( 'UPDATE_BINDINGS' )
 	self.playerClass = select(2,UnitClass('player'))
 	self.playerName  = UnitName('player')
-	self.inCombat    = not not InCombatLockdown()	
+	self.inCombat    = not not InCombatLockdown()
 	HideBlizzardFrames()
 	EnableMasque()
 	UpdateTalents()
