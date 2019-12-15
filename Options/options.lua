@@ -118,7 +118,7 @@ local newGroupType
 
 ---- Button Types
 local buttonTypes = { AURA = 'Aura', COOLDOWN = 'Cooldown' }
-if addon.playerClass == 'MAGE' then
+if addon.playerClass == 'MAGE' and not isClassic then
 	buttonTypes.INCANTERFLOW = (GetSpellInfo(116267)) or 'Incanter Flow'
 	buttonTypes.ARCANECHARGES = (GetSpellInfo(36032)) or 'Arcane Charges'
 end
@@ -158,37 +158,67 @@ else
 	end
 end
 
-local function GetClassTalents(class, spec)
-	if not classTalents then
-		classTalents = { undefined = {} }
-		classTalents[addon.playerClass] = {}
-		if not isClassic then
+local GetClassTalents
+if isClassic then
+	local MAX_TALENT_TABS = 5
+	local MAX_NUM_TALENTS = 20
+	GetClassTalents = function(class)
+		if not classTalents then
+			classTalents = { undefined = {} }
+			classTalents[addon.playerClass] = {}
+			for i=1,MAX_TALENT_TABS do
+				for j=1,MAX_NUM_TALENTS do
+					classTalents.undefined[ (i-1)*MAX_TALENT_TABS+j ] = string.format("Tab %d - %d", i,j)
+				end
+			end
+		end
+		local talents = classTalents[class]
+		if talents then
+			talents = talents[0]
+			if not talents then
+				talents = {}
+				classTalents[class][0] = talents
+				for tab = 1, GetNumTalentTabs() do
+					for id = 1, GetNumTalents(tab) do
+						local name, icon = GetTalentInfo(tab, id)
+						talents[(tab-1)*MAX_NUM_TALENTS+id] = string.format("|T%s:0|t %s", icon, name)
+					end
+				end
+			end
+		end
+		return talents or classTalents.undefined
+	end
+else
+	GetClassTalents = function(class, spec)
+		if not classTalents then
+			classTalents = { undefined = {} }
+			classTalents[addon.playerClass] = {}
 			for i=1,MAX_TALENT_TIERS do
 				for j=1,NUM_TALENT_COLUMNS do
 					classTalents.undefined[ (i-1)*3+j ] = string.format("Tier %d - %d", i,j)
 				end
 			end
 		end
-	end
-	local talents = classTalents[class]
-	if talents and not isClassic then
-		talents = talents[spec]
-		if not talents then
-			local specID = GetSpecialization()
-			if specID and spec == select(2,GetSpecializationInfo(specID)) then
-				talents = {}
-				classTalents[class][spec] = talents
-				local specGroup = GetActiveSpecGroup()
-				for tier = 1, MAX_TALENT_TIERS do
-					for col = 1, NUM_TALENT_COLUMNS do
-						local _, name, icon = GetTalentInfo(tier, col, specGroup)
-						talents[(tier-1)*3+col] = string.format("|T%s:0|t %s", icon,name)
+		local talents = classTalents[class]
+		if talents then
+			talents = talents[spec]
+			if not talents then
+				local specID = GetSpecialization()
+				if specID and spec == select(2,GetSpecializationInfo(specID)) then
+					talents = {}
+					classTalents[class][spec] = talents
+					local specGroup = GetActiveSpecGroup()
+					for tier = 1, MAX_TALENT_TIERS do
+						for col = 1, NUM_TALENT_COLUMNS do
+							local _, name, icon = GetTalentInfo(tier, col, specGroup)
+							talents[(tier-1)*3+col] = string.format("|T%s:0|t %s", icon,name)
+						end
 					end
 				end
 			end
 		end
+		return talents or classTalents.undefined
 	end
-	return talents or classTalents.undefined
 end
 
 -- Corner Points
@@ -477,7 +507,7 @@ end
 ----------------------------------------------------------------
 
 addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab", get = "Get", set = "Set", args = {
-	Group = { type = "group", order = 10, name = 'Groups Setup', childGroups = "tab",
+	Group = { type = "group", order = 10, name = 'General', childGroups = "tab",
 		-- Group options handler
 		handler = newHandler({
 			GetDB    = function() return group end,
@@ -488,7 +518,8 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 		selectedGroup = {
 			type = 'select',
 			order = 1,
-			name = 'Select an Icons Group',
+			width = 1.5,
+			name = 'Select a Group of Icons',
 			get = function() return GetNameKey(group and group.name) end,
 			set = function(info, key) SetSelectedGroup( GetNameKey(key)	) end,
 			values = GetGroupList,
@@ -961,7 +992,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					GroupReload()
 				end,
 				hidden = function(info)
-					return isClassic or not group.displayPlayerSpec
+					return not group.displayPlayerSpec and not isClassic
 				end,
 			},
 			displayPlayerTalent = {
@@ -979,7 +1010,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					return not group.displayPlayerTalent
 				end,
 				hidden = function()
-					return isClassic or not group.displayPlayerSpec
+					return not group.displayPlayerSpec and not isClassic
 				end,
 			},
 		} },
@@ -1360,7 +1391,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 			}
 		},
 	} },
-	Misc  = { type = "group", order = 20, name = 'Misc. Options', childGroups = "tab", args = {
+	Misc  = { type = "group", order = 20, name = 'Miscellaneus', childGroups = "tab", args = {
 		enableMasque = {
 			type = 'toggle', order = 10, width = 'full', name = 'Enable Masque support',
 			get = function() return general.Masque end,
@@ -1394,6 +1425,15 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				return (not value) and 'UI will be reloaded to Reenable Blizzard Buff Frames. Are you sure ?'
 			end,
 		}
+	} },
+	About  = { type = "group", order = 30, name = 'About', childGroups = "tab", args = {
+		tit = {
+			type  = "description", order = 10, width = "full", fontSize = "large",
+			image = "Interface\\Addons\\Grid2\\media\\icon", imageWidth  = 30, imageHeight = 30, imageCoords = { 0.05, 0.95, 0.05, 0.95 },
+			name  = string.format("%sCoolAuras v%s|r\nWelcome to CoolAuras", NORMAL_FONT_COLOR_CODE , GetAddOnMetadata("CoolAuras","Version")),
+		},
+		sep = { type = "header", order = 20, width = "full", name = "" },
+		des = { type = "description", order = 30, fontSize = "small", name = "Bars of icons to monitor buffs, debuffs and cooldowns." },
 	} },
 } }
 
@@ -1481,7 +1521,7 @@ BUTTONS.SHARED_OPTIONS = {
 		end,
 		hidden = function() return button.type ~= 'COOLDOWN' end,
 	},
-	displaySep = { type = 'header', order = 500, name = 'Display Conditions', hidden = function() return isClassic end },
+	displaySep = { type = 'header', order = 500, name = 'Display Conditions' },
 	displayPlayerTalentEnabled = {
 		type = 'toggle',
 		order = 510,
@@ -1492,7 +1532,6 @@ BUTTONS.SHARED_OPTIONS = {
 		set = function(info,value)
 			button.displayPlayerTalent = value and 1 or nil
 		end,
-		hidden = function() return isClassic end,
 	},
 	displayPlayerTalent = {
 		type = 'select',
@@ -1504,7 +1543,6 @@ BUTTONS.SHARED_OPTIONS = {
 		disabled = function(info)
 			return not button.displayPlayerTalent
 		end,
-		hidden = function() return isClassic end,
 	},
 }
 

@@ -1,4 +1,5 @@
 -- Mage Arcane Charges
+if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then return end
 
 local ButtonSetIcon    = CoolAuras.ButtonSetIcon
 local ButtonSetCount   = CoolAuras.ButtonSetCount

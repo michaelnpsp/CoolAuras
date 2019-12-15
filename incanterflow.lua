@@ -1,7 +1,8 @@
-----------------------------------------------------------------
+---------------------------------------------------------------------------
 -- INCANTER FLOW BUFF TRACKING
 -- Adds a cooldown animation to easy track buff stacks
-----------------------------------------------------------------
+---------------------------------------------------------------------------
+if WOW_PROJECT_ID == WOW_PROJECT_CLASSIC then return end
 
 local addon = CoolAuras
 local UnitAura = UnitAura
@@ -10,18 +11,18 @@ local unpack = unpack
 local buffName
 local DOWNCOLOR = { .6, .6, .6, 1 }
 local ButtonSetCount = addon.ButtonSetCount
-local UnitAuraByName = addon.UnitAuraByName	
+local UnitAuraByName = addon.UnitAuraByName
 
----------------------------------------------------------------------------		
+---------------------------------------------------------------------------
 local CooldownCreate, CooldownDestroy, CooldownLayout, CooldownMasque
 do
 	local durations = {
 		[ 1]  = { [2] = 5, [3] = 4, [4] = 3, [5] = 2  },
 		[-1]  = { [4] = 10, [3] = 9, [2] = 8, [1] = 7 },
-	}	
-	local buttonAttached, frameCount, cooldown, count	
+	}
+	local buttonAttached, frameCount, cooldown, count
 	local duration, state = 0, false
-	function CooldownOnUpdate(_, elapsed)			
+	function CooldownOnUpdate(_, elapsed)
 		duration = duration - elapsed
 		if duration<=0 then
 			if state then
@@ -37,14 +38,14 @@ do
 							cooldown:SetCooldown( GetTime() - ( 10 - duration ) , 10 )
 							cooldown:Show()
 						end
-					end	
+					end
 					count = ncount
 				else
 					duration, state, count = 1, nil, nil
 					cooldown:Hide()
-				end	
-			end	
-		end	
+				end
+			end
+		end
 	end
 	function CooldownCreate(button)
 		frameCount = CreateFrame('Frame')
@@ -58,33 +59,33 @@ do
 			if not buttonAttached then
 				frameCount:SetParent(button)
 				frameCount:SetAllPoints()
-				frameCount:SetFrameLevel( button:GetFrameLevel()+5 )	
+				frameCount:SetFrameLevel( button:GetFrameLevel()+5 )
 				frameCount:Show()
 				cooldown:SetParent(button)
 				cooldown:ClearAllPoints()
 				cooldown:SetAllPoints()
 				cooldown:Hide()
-				button:SetScript('OnUpdate', CooldownOnUpdate )			
+				button:SetScript('OnUpdate', CooldownOnUpdate )
 				buttonAttached, duration, state, count = button, 0, nil, nil
-			end	
+			end
 		end
 		CooldownCreate(button)
 	end
 	function CooldownDestroy(button)
 		if button==buttonAttached then
-			frameCount:SetParent(nil)		
+			frameCount:SetParent(nil)
 			frameCount:Hide()
-			cooldown:SetParent(frameCount)		
+			cooldown:SetParent(frameCount)
 			cooldown:Hide()
 			button.Count:SetParent(button)
 			button:SetScript( 'OnUpdate', nil )
 			buttonAttached = nil
-		end	
+		end
 	end
 	function CooldownLayout(button)
 		if button==buttonAttached then
-			button.Count:SetParent(frameCount)	
-		end	
+			button.Count:SetParent(frameCount)
+		end
 	end
 	function CooldownMasque(button,ButtonData)
 		if button==buttonAttached then
@@ -103,14 +104,14 @@ function aura.OnUpdate(button)
 	if buffCount ~= count then
 		if count then
 			button.Count:SetTextColor( unpack(count>buffCount and button.countFontColor or DOWNCOLOR)  )
-			ButtonSetCount( button, count )	
-			button.buffIncanterCount = count			
+			ButtonSetCount( button, count )
+			button.buffIncanterCount = count
 		else
 			button.Count:SetTextColor( unpack(button.countFontColor)  )
-			ButtonSetCount( button, 0 )	
+			ButtonSetCount( button, 0 )
 			button.buffIncanterCount = 10
-		end	
-	end	
+		end
+	end
 end
 
 function aura.OnCreate(button)
@@ -118,17 +119,17 @@ function aura.OnCreate(button)
 	buffName, _, icon = GetSpellInfo(116267)
 	button.Icon:SetTexture( icon )
 	button:RegisterUnitEvent( 'UNIT_AURA', 'player' )
-	button:SetScript('OnEvent', aura.OnUpdate) 
+	button:SetScript('OnEvent', aura.OnUpdate)
 	button.buffIncanterCount = 10 -- Arbitrary high value
 	button.countFontColor = button.db.countFontColor or addon.COLORWHITE
-	button.countThreshold = 1 
+	button.countThreshold = 1
 	CooldownCreate(button)
 end
 
 function aura.OnDestroy(button)
 	button:UnregisterAllEvents()
 	button:SetScript('OnEvent', nil)
-	CooldownDestroy(button)	
+	CooldownDestroy(button)
 end
 
 function aura.OnDisableCheck()

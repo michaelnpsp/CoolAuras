@@ -16,6 +16,8 @@ core.lua
 keybinds.lua
 auras.lua
 cooldowns.lua
+#@retail@
 incanterflow.lua
 arcanecharges.lua
+#@end-retail@
 

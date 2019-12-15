@@ -211,10 +211,24 @@ end
 --
 ----------------------------------------------------------------
 
-local function IsTalentEnabled(talentID)
-	local tier = math.ceil(talentID / 3)
-	local col  = (talentID - 1) % 3 + 1
-	return select(4, GetTalentInfo(tier, col, GetActiveSpecGroup() ) )
+local IsTalentEnabled
+do
+	local ceil = math.ceil
+	local GetTalentInfo = GetTalentInfo
+	local GetActiveSpecGroup = GetActiveSpecGroup
+	if isClassic then -- classic
+		IsTalentEnabled = function(talentID)
+			local tab = ceil(talentID / 20) -- max num talents per tab = 20
+			local id  = (talentID - 1) % 20 + 1
+			return select(5,GetTalentInfo(tab,id)) ~= 0
+		end
+	else -- retail
+		IsTalentEnabled = function(talentID)
+			local tier = ceil(talentID / 3)
+			local col  = (talentID - 1) % 3 + 1
+			return select(4, GetTalentInfo(tier, col, GetActiveSpecGroup() ) )
+		end
+	end
 end
 
 local function GroupDisplayFilter(db)
@@ -688,7 +702,7 @@ end
 local function OnGameEvent(frame, event)
 	if event == 'PLAYER_REGEN_DISABLED' or event == 'PLAYER_REGEN_ENABLED' then
 		UpdateCombat( event == 'PLAYER_REGEN_DISABLED' )
-	elseif event == 'PLAYER_TALENT_UPDATE' or event == 'PLAYER_SPECIALIZATION_CHANGED' then
+	elseif event == 'PLAYER_TALENT_UPDATE' or event == 'PLAYER_SPECIALIZATION_CHANGED' or event == 'CHARACTER_POINTS_CHANGED' then
 		UpdateTalents(true)
 	elseif event == 'PLAYER_ENTERING_WORLD' then
 		HideBlizzardFrames()
@@ -735,7 +749,9 @@ addon.ButtonSetEnabled    = ButtonSetEnabled
 
 function addon:Run(frame)
 	frame:SetScript('OnEvent', OnGameEvent)
-	if not isClassic then
+	if isClassic then
+		frame:RegisterEvent( 'CHARACTER_POINTS_CHANGED' )
+	else
 		frame:RegisterEvent( 'PLAYER_TALENT_UPDATE' )
 		frame:RegisterEvent( 'PLAYER_SPECIALIZATION_CHANGED' )
 	end
