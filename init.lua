@@ -83,7 +83,7 @@ function addon:Initialize()
 	LibStub("LibDBIcon-1.0"):Register(addonName, LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
 		type  = "launcher",
 		label = GetAddOnInfo( addonName, "Title"),
-		icon  = "Interface\\AddOns\\KiwiFarm\\KiwiFarm",
+		icon  = "Interface\\Addons\\CoolAuras\\icon",
 		OnClick = function(self, button) addon.OnChatCommand() end,
 		OnTooltipShow = function(tooltip)
 			tooltip:AddDoubleLine("CoolAuras", GetAddOnMetadata(addonName, "Version") )

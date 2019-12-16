@@ -1438,7 +1438,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 	About  = { type = "group", order = 30, name = 'About', childGroups = "tab", args = {
 		tit = {
 			type  = "description", order = 10, width = "full", fontSize = "large",
-			image = "Interface\\Addons\\Grid2\\media\\icon", imageWidth  = 30, imageHeight = 30, imageCoords = { 0.05, 0.95, 0.05, 0.95 },
+			image = "Interface\\Addons\\CoolAuras\\icon", imageWidth  = 30, imageHeight = 30, imageCoords = { 0.05, 0.95, 0.05, 0.95 },
 			name  = string.format("%sCoolAuras v%s|r\nWelcome to CoolAuras", NORMAL_FONT_COLOR_CODE , GetAddOnMetadata("CoolAuras","Version")),
 		},
 		sep = { type = "header", order = 20, width = "full", name = "" },
