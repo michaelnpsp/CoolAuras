@@ -87,7 +87,7 @@ function addon:Initialize()
 		OnClick = function(self, button) addon.OnChatCommand() end,
 		OnTooltipShow = function(tooltip)
 			tooltip:AddDoubleLine("CoolAuras", GetAddOnMetadata(addonName, "Version") )
-			tooltip:AddLine("|cFFff4040Left Click|r toggle config window visibility", 0.2, 1, 0.2)
+			tooltip:AddLine("|cFFff4040Left Click|r to open configuration window", 0.2, 1, 0.2)
 		end,
 	}) , addon.db.minimap)
 	--
