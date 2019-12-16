@@ -17,6 +17,7 @@ addon.defaults = {
 		--disableBlizzard = true,
 	},
 	groups = {},
+	minimap = { hide = false },
 }
 
 ----------------------------------------------------------------
@@ -28,6 +29,8 @@ function addon:GetDB(name, defaults)
 	if not db then
 		db = defaults or {}
 		_G[name] = db
+	elseif not db.minimap then
+		db.minimap = defaults.minimap
 	end
 	self.GetDB = nil
 	return db
@@ -60,7 +63,9 @@ _G[ 'SLASH_'..addonName:upper()..'1' ] = '/coolauras'
 ----------------------------------------------------------------
 
 function addon:Initialize()
+	-- database
 	addon.db = addon:GetDB('CoolAurasDB', addon.defaults)
+	-- blizzard interface options
 	local optionsFrame = CreateFrame( "Frame", nil, UIParent )
 	optionsFrame.name = "CoolAuras"
 	local button = CreateFrame("BUTTON", nil, optionsFrame, "UIPanelButtonTemplate")
@@ -74,6 +79,18 @@ function addon:Initialize()
 	end)
 	InterfaceOptions_AddCategory(optionsFrame)
 	self.optionsFrame = optionsFrame
+	-- minimap Icon
+	LibStub("LibDBIcon-1.0"):Register(addonName, LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {
+		type  = "launcher",
+		label = GetAddOnInfo( addonName, "Title"),
+		icon  = "Interface\\AddOns\\KiwiFarm\\KiwiFarm",
+		OnClick = function(self, button) addon.OnChatCommand() end,
+		OnTooltipShow = function(tooltip)
+			tooltip:AddDoubleLine("CoolAuras", GetAddOnMetadata(addonName, "Version") )
+			tooltip:AddLine("|cFFff4040Left Click|r toggle config window visibility", 0.2, 1, 0.2)
+		end,
+	}) , addon.db.minimap)
+	--
 	self.Initialize = nil
 end
 

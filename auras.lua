@@ -89,8 +89,8 @@ do
 		local list = {}
 		if names then
 			local t = { strsplit("\n",names) }
-			for i=1,#t do -- Remove comments: any text starting with #@\/-[ characters.
-				local s = strtrim( (strsplit( "#@\\\/\-\[", t[i] )) ) -- Don't remove strsplit extra brackets.
+			for i=1,#t do -- Remove comments: any text starting with #@\/[ characters.
+				local s = strtrim( (strsplit( "#@\\\/\[", t[i] )) ) -- Don't remove strsplit extra brackets.
 				if #s>0 then list[s] = true end
 			end
 		end

@@ -1392,6 +1392,15 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 		},
 	} },
 	Misc  = { type = "group", order = 20, name = 'Miscellaneus', childGroups = "tab", args = {
+		enableMinimap = {
+			type = 'toggle', order = 5, width = 'full', name = 'Display Minimap Icon',
+			get = function() return not addon.db.minimap.hide end,
+			set = function(info,value)
+				addon.db.minimap.hide = (not addon.db.minimap.hide) or nil
+				local LDBI = LibStub("LibDBIcon-1.0")
+				LDBI[value and 'Show' or 'Hide'](LDBI, 'CoolAuras')
+			end,
+		},
 		enableMasque = {
 			type = 'toggle', order = 10, width = 'full', name = 'Enable Masque support',
 			get = function() return general.Masque end,
