@@ -1,8 +1,8 @@
 #@retail@
-## Interface: 80205
+## Interface: 80300
 #@end-retail@
 #@non-retail@
-# ## Interface: 11303
+# ## Interface: 11304
 #@end-non-retail@
 ## Author: Michael
 ## Title: |cFF7FFF72Cool|r Auras |cFF4c9944Options|r
