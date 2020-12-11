@@ -1598,7 +1598,7 @@ BUTTONS.AURA = {
 				spell,_,texture,_,_,_,spellID = GetSpellInfo(spell)
 				if not spell then return end
 			else
-				_,texture,_,_,_,_,_,_,_, spellID = UnitAura(button.unit, spell, nil, button.filter)
+				_,texture,_,_,_,_,_,_,_, spellID = AuraUtil.FindAuraByName(spell, button.unit, button.filter)
 				if not spellID then
 					_,_,texture,_,_,_,spellID = GetSpellInfo(spell)
 				end
