@@ -16,7 +16,16 @@ addon.playerName  = UnitName('player')
 --
 ----------------------------------------------------------------
 
-local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+local versionCli = select(4,GetBuildInfo())
+addon.isClassic = versionCli<30000 -- vanilla or tbc
+addon.isVanilla = versionCli<20000
+addon.isTBC     = versionCli>=20000 and versionCli<30000
+addon.isWoW90   = versionCli>=90000
+
+----------------------------------------------------------------
+--
+----------------------------------------------------------------
+
 local next = next
 local tinsert = table.insert
 local tremove = table.remove
@@ -25,6 +34,7 @@ local GetTime = GetTime
 local FONT_DEFAULT = STANDARD_TEXT_FONT
 local COLORWHITE   = {1,1,1,1}
 local COLORBLACK   = {0,0,0,1}
+local isClassic = addon.isClassic
 
 ----------------------------------------------------------------
 --

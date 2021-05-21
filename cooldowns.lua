@@ -4,7 +4,7 @@
 
 local addon = CoolAuras
 
-local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+local isClassic = addon.isClassic -- vanilla or tbc
 
 local tinsert = table.insert
 local tremove = table.remove

@@ -4,7 +4,7 @@
 
 local addon = CoolAuras
 
-local isClassic = (WOW_PROJECT_ID == WOW_PROJECT_CLASSIC)
+local isVanilla = addon.isVanilla
 
 local UnitAuraByName   = addon.UnitAuraByName
 local ButtonSetValues  = addon.ButtonSetValues
@@ -48,7 +48,7 @@ do
 
 	frame:Hide()
 	frame:RegisterEvent('PLAYER_TARGET_CHANGED')
-	if not isClassic then frame:RegisterEvent('PLAYER_FOCUS_CHANGED') end
+	if not isVanilla then frame:RegisterEvent('PLAYER_FOCUS_CHANGED') end
 	frame:RegisterEvent('ZONE_CHANGED_NEW_AREA')
 	frame:SetScript('OnEvent',  function(frame, event)
 		local time    = GetTime()
