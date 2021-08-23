@@ -221,6 +221,15 @@ else
 	end
 end
 
+-- shapeshift forms
+local shapeshiftForms = {}
+local shapeshiftDefault
+for i=1,GetNumShapeshiftForms() do
+   local icon, active, castable, spellID = GetShapeshiftFormInfo(i)
+   shapeshiftForms[spellID] = string.format( "|T%s:0|t %s", icon, (GetSpellInfo(spellID)) )
+   shapeshiftDefault = shapeshiftDefault or spellID
+end
+
 -- Corner Points
 local cornerPoints = { TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true }
 
@@ -1013,6 +1022,32 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					return not group.displayPlayerSpec and not isClassic
 				end,
 			},
+			sep6 = { type = 'description', order = 60, name = "" },
+			displayPlayerShapeshiftEnabled ={
+				type = 'toggle',
+				order = 61,
+				name = 'Player Shapeshift',
+				get = function(info)
+					return group.displayPlayerShapeshift ~= nil
+				end,
+				set = function(info,value)
+					group.displayPlayerShapeshift = value and shapeshiftDefault or nil
+					GroupReload()
+				end,
+			},
+			displayPlayerShapeshift = {
+				type = 'select',
+				order = 62,
+				name = 'Shapeshift Form',
+				set = function(info,value)
+					group.displayPlayerShapeshift = value
+					GroupReload()
+				end,
+				values = shapeshiftForms,
+				disabled = function()
+					return not group.displayPlayerShapeshift
+				end,
+			},
 		} },
 		-- AURAS GROUP CONFIGURATION
 		GroupAuras = { type = "group", order = 10, name = 'Auras Configuration',
@@ -1551,6 +1586,27 @@ BUTTONS.SHARED_OPTIONS = {
 		end,
 		disabled = function(info)
 			return not button.displayPlayerTalent
+		end,
+	},
+	displaySep1 = { type = 'description', order = 600, name = "" },
+	displayPlayerShapeshiftEnabled ={
+		type = 'toggle',
+		order = 610,
+		name = 'Player Shapeshift',
+		get = function(info)
+			return button.displayPlayerShapeshift ~= nil
+		end,
+		set = function(info,value)
+			button.displayPlayerShapeshift = value and shapeshiftDefault or nil
+		end,
+	},
+	displayPlayerShapeshift = {
+		type = 'select',
+		order = 620,
+		name = 'Shapeshift Form',
+		values = shapeshiftForms,
+		disabled = function()
+			return not button.displayPlayerShapeshift
 		end,
 	},
 }

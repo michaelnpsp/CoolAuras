@@ -246,12 +246,14 @@ local function GroupDisplayFilter(db)
 			addon.playerRole  == (db.displayPlayerRole  or addon.playerRole)  and
 			addon.playerClass == (db.displayPlayerClass or addon.playerClass) and
 			addon.playerSpec  == (db.displayPlayerSpec  or addon.playerSpec)  and
+			addon.playerShapeshift == (db.displayPlayerShapeshift or addon.playerShapeshift)  and
 			(not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent))
 end
 
 local function ButtonDisplayFilter(db, button)
 	return not Notify(button, 'OnDisableCheck') and
-		  (not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent))
+		  (not db.displayPlayerTalent or IsTalentEnabled(db.displayPlayerTalent)) and
+		  (not db.displayPlayerShapeshift or db.displayPlayerShapeshift==addon.playerShapeshift)
 end
 
 ----------------------------------------------------------------
@@ -664,6 +666,27 @@ do
 	end
 end
 
+----------------------------------------------------------------
+-- ShapeShift form
+----------------------------------------------------------------
+
+local UpdateShapeshift
+do
+	local GetShapeshiftForm = GetShapeshiftForm
+	local GetShapeshiftFormInfo = GetShapeshiftFormInfo
+	function UpdateShapeshift(noReload)
+		local index = GetShapeshiftForm()
+		if index then
+			local spellID = index>0 and select(4,GetShapeshiftFormInfo(index)) or 0 -- 0 = human form
+			if addon.playerShapeshift ~= spellID then
+				addon.playerShapeshift = spellID
+				if not noReload then
+					ReloadBars()
+				end
+			end
+		end
+	end
+end
 
 ----------------------------------------------------------------
 -- Combat Status
@@ -718,6 +741,8 @@ local function OnGameEvent(frame, event)
 		HideBlizzardFrames()
 	elseif event == 'UPDATE_BINDINGS' then
 		addon.ResetBindings()
+	elseif event == 'UPDATE_SHAPESHIFT_FORM'then
+		UpdateShapeshift()
 	end
 end
 
@@ -768,10 +793,13 @@ function addon:Run(frame)
 	frame:RegisterEvent( 'PLAYER_REGEN_DISABLED' )
 	frame:RegisterEvent( 'PLAYER_REGEN_ENABLED' )
 	frame:RegisterEvent( 'UPDATE_BINDINGS' )
+	frame:RegisterEvent( 'UPDATE_SHAPESHIFT_FORM' )
+
 	self.playerClass = select(2,UnitClass('player'))
 	self.playerName  = UnitName('player')
 	self.inCombat    = not not InCombatLockdown()
 	HideBlizzardFrames()
 	EnableMasque()
+	UpdateShapeshift(true) -- always before UpdateTalents()
 	UpdateTalents()
 end

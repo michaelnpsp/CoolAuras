@@ -35,7 +35,7 @@ do
 	local GetSpellTexture    = GetSpellTexture
 	local GetItemCooldown    = GetItemCooldown
 	local IsUsableSpell      = IsUsableSpell
-	local IsSpellOverlayed   = IsSpellOverlayed
+	local IsSpellOverlayed   = IsSpellOverlayed or function() end
 	local ButtonOverlayShow  = addon.ButtonOverlayShow
 	local ButtonOverlayHide  = addon.ButtonOverlayHide
 	local ButtonSetIcon      = addon.ButtonSetIcon
@@ -49,7 +49,7 @@ do
 
 	if isClassic then
 		local GetSpellCooldownOrig = GetSpellCooldown
-		local classSpell = ({ MAGE=116, ROGUE=1752, PRIEST=585, WARLOCK=686, HUNTER=2973, WARRIOR=12294, PALADIN=635, SHAMAN=403 })[addon.playerClass]
+		local classSpell = ({ MAGE=116, ROGUE=1752, PRIEST=585, WARLOCK=686, HUNTER=2973, WARRIOR=12294, PALADIN=635, SHAMAN=403, DRUID=5185 })[addon.playerClass]
 		GetSpellCooldown = function(spellID)
 			if spellID~=61304 then return GetSpellCooldownOrig(spellID) end
 			local start, duration = GetSpellCooldownOrig(classSpell)
