@@ -22,6 +22,9 @@ addon.isVanilla = versionCli<20000
 addon.isTBC     = versionCli>=20000 and versionCli<30000
 addon.isWoW90   = versionCli>=90000
 
+local versionToc = GetAddOnMetadata("CastCursor","Version")
+addon.versionToc = versionToc=='@project-version@' and 'Dev' or 'v'..versionToc
+
 ----------------------------------------------------------------
 --
 ----------------------------------------------------------------

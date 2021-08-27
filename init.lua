@@ -7,6 +7,9 @@ local addonName = ...
 local addon = { addonName = addonName }
 _G[addonName] = addon
 
+local versionToc = GetAddOnMetadata(addonName,"Version")
+addon.versionToc = versionToc=='@project-version@' and 'Dev' or 'v'..versionToc
+
 ----------------------------------------------------------------
 -- Variables
 ----------------------------------------------------------------
@@ -86,7 +89,7 @@ function addon:Initialize()
 		icon  = "Interface\\Addons\\CoolAuras\\icon",
 		OnClick = function(self, button) addon.OnChatCommand() end,
 		OnTooltipShow = function(tooltip)
-			tooltip:AddDoubleLine("CoolAuras", GetAddOnMetadata(addonName, "Version") )
+			tooltip:AddDoubleLine("CoolAuras", addon.versionToc)
 			tooltip:AddLine("|cFFff4040Left Click|r to open configuration window", 0.2, 1, 0.2)
 		end,
 	}) , addon.db.minimap)
