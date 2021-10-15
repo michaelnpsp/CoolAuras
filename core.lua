@@ -288,7 +288,7 @@ addon.tooltipAnchors = {
 }
 
 -- Masque buttonData fields
-local masqueLayers = { "FloatingBG", "AutoCast", "AutoCastable", "Backdrop", "Checked", "Cooldown", "Count", "Disabled", "Flash", "Highlight", "HotKey", "Name", "Pushed" }
+local masqueLayers = { "FloatingBG", "AutoCast", "AutoCastable", "Backdrop", "Checked", "Cooldown", "ChargeCooldown", "Count", "Disabled", "Flash", "Highlight", "HotKey", "Name", "Pushed" }
 
 -- Created Bars
 local bars = {}
@@ -561,7 +561,7 @@ local function LayoutBar(bar)
 	end
 	LayoutButtons(bar)
 	if reskin then
-		barMasque:ReSkin()
+		reskin:ReSkin()
 	end
 end
 

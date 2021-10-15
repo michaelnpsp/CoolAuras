@@ -265,14 +265,14 @@ do
 	function cooldown.OnLayout(button)
 		local Cool = button.Cooldown
 		if Cool then
+			Cool:SetParent(button)
+			Cool:ClearAllPoints()
+			Cool:SetAllPoints()
+			Cool:SetDrawEdge(false)
+			Cool:SetDrawBling(false)
 			if not addon.Masque then
-				Cool:SetParent(button)
-				Cool:SetDrawEdge(false)
-				Cool:SetDrawBling(false)
-				Cool:SetSwipeColor(0, 0, 0);
+				Cool:SetSwipeColor(0, 0, 0)
 				Cool:SetHideCountdownNumbers(true)
-				Cool:ClearAllPoints()
-				Cool:SetAllPoints()
 				Cool.noCooldownCount = true
 			end
 			Cool:Show()
