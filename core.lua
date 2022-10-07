@@ -17,10 +17,11 @@ addon.playerName  = UnitName('player')
 ----------------------------------------------------------------
 
 local versionCli = select(4,GetBuildInfo())
-addon.isClassic = versionCli<40000 -- vanilla or tbc or wrath
-addon.isVanilla = versionCli<20000
-addon.isTBC     = versionCli>=20000 and versionCli<30000
-addon.isWoW90   = versionCli>=90000
+addon.versionCli = versionCli
+addon.isClassic  = versionCli<40000 -- vanilla or tbc or wrath
+addon.isVanilla  = versionCli<20000
+addon.isTBC      = versionCli>=20000 and versionCli<30000
+addon.isWoW90    = versionCli>=90000
 
 local versionToc = GetAddOnMetadata("CastCursor","Version")
 addon.versionToc = versionToc=='@project-version@' and 'Dev' or 'v'..versionToc

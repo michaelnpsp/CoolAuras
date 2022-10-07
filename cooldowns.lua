@@ -4,8 +4,6 @@
 
 local addon = CoolAuras
 
-local isClassic = addon.isClassic -- vanilla or tbc
-
 local tinsert = table.insert
 local tremove = table.remove
 
@@ -35,7 +33,7 @@ do
 	local GetSpellTexture    = GetSpellTexture
 	local GetItemCooldown    = GetItemCooldown
 	local IsUsableSpell      = IsUsableSpell
-	local IsSpellOverlayed   = IsSpellOverlayed or function() end
+	local IsSpellOverlayed   = IsSpellOverlayed or function() return false end
 	local ButtonOverlayShow  = addon.ButtonOverlayShow
 	local ButtonOverlayHide  = addon.ButtonOverlayHide
 	local ButtonSetIcon      = addon.ButtonSetIcon
@@ -47,7 +45,7 @@ do
 	local tipButton
 	local cooldown = {}
 
-	if isClassic then
+	if addon.versionCli<30000 then -- vanilla or tbc
 		local GetSpellCooldownOrig = GetSpellCooldown
 		local classSpell = ({ MAGE=116, ROGUE=1752, PRIEST=585, WARLOCK=686, HUNTER=2973, WARRIOR=12294, PALADIN=635, SHAMAN=403, DRUID=5185 })[addon.playerClass]
 		GetSpellCooldown = function(spellID)
@@ -198,7 +196,7 @@ do
 		frame:RegisterEvent('SPELL_UPDATE_USABLE')
 		frame:RegisterEvent("SPELL_UPDATE_CHARGES")
 		frame:RegisterEvent("SPELL_UPDATE_ICON")
-		if not isClassic then
+		if addon.versionCli>=30000 then -- Wotlk or superior
 			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW")
 			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE")
 		end
@@ -240,9 +238,13 @@ do
 	function cooldown.OnCreate(button)
 		local texture
 		if button.db.spell then
+			local spellID  = button.db.spellID
 			button.itemID  = nil
-			button.spellID = button.db.spellID or select( 7, GetSpellInfo(button.db.spell) ) or 1
-			texture        = (GetSpellTexture(button.db.spell)) or button.db.texture
+			button.spellID = (spellID and (GetSpellInfo(spellID)) and spellID) or select(7, GetSpellInfo(button.db.spell)) or 1
+			texture        = (GetSpellTexture(button.spellID)) or (GetSpellTexture(button.db.spell)) or button.db.texture
+			if button.spellID==1 then
+				print("CoolAuras ERROR spellID is not recognized:", spellID, button.db.spell)
+			end
 		else
 			button.spellID = nil
 			button.itemID  = button.db.itemID
