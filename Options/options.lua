@@ -229,6 +229,10 @@ for i=1,GetNumShapeshiftForms() do
    shapeshiftForms[spellID] = string.format( "|T%s:0|t %s", icon, (GetSpellInfo(spellID)) )
    shapeshiftDefault = shapeshiftDefault or spellID
 end
+if addon.isWrath and not shapeshiftForms[33891] then
+	local name, _, icon = GetSpellInfo(33891)
+	shapeshiftForms[33891] = string.format( "|T%s:0|t %s", icon, name )
+end
 
 -- Corner Points
 local cornerPoints = { TOPLEFT = true, TOPRIGHT = true, BOTTOMLEFT = true, BOTTOMRIGHT = true }
