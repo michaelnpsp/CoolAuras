@@ -715,11 +715,13 @@ do
 	end
 	function HideBlizzardFrames()
 		local function HideFrame(frame)
-			frame:SetParent(addon.hiddenFrame)
-			frame:SetScript("OnUpdate", nil)
-			frame:HookScript("OnShow", ReHideFrame)
-			frame:Hide()
-			frame:UnregisterAllEvents()
+			if frame then
+				frame:SetParent(addon.hiddenFrame)
+				frame:SetScript("OnUpdate", nil)
+				frame:HookScript("OnShow", ReHideFrame)
+				frame:Hide()
+				frame:UnregisterAllEvents()
+			end
 		end
 		if addon.db.general.disableBlizzard then
 			addon.hiddenFrame = CreateFrame('Frame')
