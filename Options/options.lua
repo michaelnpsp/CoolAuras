@@ -667,7 +667,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 					type = 'range', order = 20, name = 'Icon Size', min = 1, softMax = 64, step = 1,
 				},
 				buttonSpacing = {
-					type = 'range', order = 30, name = 'Icon Spacing', min = 0, softMax = 64, step = 1,
+					type = 'range', order = 30, name = 'Icon Spacing', min = -16, softMin= 0, softMax = 64, step = 1,
 				},
 				centerButtons = {
 					type = 'toggle', order = 35, name = 'Center Icons',
