@@ -8,6 +8,7 @@
 ## Notes: Cooldowns & Auras Tracker
 ## Version: @project-version@
 ## Author: MiCHaeL
+## IconTexture: Interface/AddOns/CoolAuras/icon.tga
 ## SavedVariables: CoolAurasDB
 ## OptionalDependencies: Masque
 
