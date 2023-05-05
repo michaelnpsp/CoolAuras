@@ -6,6 +6,8 @@ local addon = CoolAuras
 
 local isClassic = addon.isClassic
 
+local GetAddOnMetadata = C_AddOns and C_AddOns.GetAddOnMetadata or GetAddOnMetadata
+
 ----------------------------------------------------------------
 -- More user friendly Names
 ----------------------------------------------------------------
