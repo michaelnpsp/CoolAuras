@@ -176,17 +176,17 @@ local ButtonOverlayShow, ButtonOverlayHide, ButtonOverlayUpdate
 do
 	local unused = {}
 	local count  = 0
-	local function CreateOverlay()
+	local function OverlayCreate()
 		count = count + 1
 		return CreateFrame("Frame", "CoolAurasOverlayGlow"..count, UIParent, "ActionBarButtonSpellActivationAlert")
 	end
 	function ButtonOverlayShow(self)
 		local overlay = self.overlay
 		if overlay then
-			overlay.animOut:Stop()
+			(overlay.ProcStartAnim or overlay.animIn):Stop()
 		else
 			local w,h = self:GetSize()
-			overlay = tremove( unused ) or CreateOverlay()
+			overlay = tremove(unused) or OverlayCreate()
 			overlay:SetParent(self)
 			overlay:ClearAllPoints()
 			overlay:SetSize(w * 1.4, h * 1.4);
@@ -195,13 +195,14 @@ do
 			overlay:Show()
 			self.overlay = overlay
 		end
-		overlay.animIn:Play()
+		(overlay.ProcStartAnim or overlay.animIn):Play()
 	end
 	function ButtonOverlayHide(self)
 		local overlay = self.overlay
 		if overlay then
-			tinsert( unused, overlay)
+			tinsert(unused, overlay)
 			self.overlay =  nil
+			(overlay.ProcStartAnim or overlay.animIn):Stop()
 			overlay:Hide()
 			overlay:SetParent(nil)
 		end
@@ -571,10 +572,12 @@ end
 local function DisplayBar(bar)
 	local displayCombat = bar.db.displayCombat
 	local isVisible = displayCombat == nil or displayCombat == addon.inCombat
-	if isVisible ~= not not bar:IsShown() then
-		bar:SetShown( isVisible )
+	if isVisible ~= not not bar:IsVisible() then
 		if isVisible then
+			bar:Show()
 			UpdateBar(bar)
+		else
+			bar:Hide()
 		end
 	end
 end
