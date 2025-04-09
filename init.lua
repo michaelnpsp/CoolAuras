@@ -81,7 +81,7 @@ function addon:Initialize()
 		HideUIPanel(GameMenuFrame)
 		addon.OnChatCommand()
 	end)
-	InterfaceOptions_AddCategory(optionsFrame)
+	-- InterfaceOptions_AddCategory(optionsFrame)
 	self.optionsFrame = optionsFrame
 	-- minimap Icon
 	LibStub("LibDBIcon-1.0"):Register(addonName, LibStub("LibDataBroker-1.1"):NewDataObject(addonName, {

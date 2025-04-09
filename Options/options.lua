@@ -1094,7 +1094,7 @@ addon.OptionsTable = { name = "Cool Auras", type = "group", childGroups = "tab",
 				},
 				timeThreshold = {
 					type = 'range', order = 35, name = 'Time Left Threshold', desc = 'Threshold in seconds to display the time left text. Set zero to disable the time left text.',
-					min = 0, max = 180, step = 1,
+					min = 0, softMax = 180, step = 1,
 					get = function() return group.timeThreshold or 60 end,
 				},
 				showTooltips = {

@@ -586,6 +586,8 @@ local function CreateBar( db )
 	local bar = addon.FrameFactory_Get( db.type ) or CreateFrame('Frame')
 	bar:Hide()
 	bar:SetParent(UIParent)
+	bar:SetFrameStrata('BACKGROUND')
+	bar:SetFrameLevel(1)
 	bars[db.name] = bar
 	bar.db        = db
 	bar.className = db.type
