@@ -80,17 +80,6 @@ do
 		end
 	end
 
-	local function UpdateUsable(button)
-		if not button.vExpiration then
-			if button.spellID then
-				ButtonSetEnabled( button, IsUsableSpell(button.spellID) )
-			else
-				ButtonSetEnabled( button, IsUsableItem(button.itemID) )
-			end
-			UpdateOverlay(button)
-		end
-	end
-
 	local function UpdateIcon(button)
 		if button.spellID then
 			local texture = GetSpellTexture(button.spellID)
@@ -111,7 +100,7 @@ do
 				ButtonSetEnabled( button, charges~=0 )
 			else
 				local gs, gd = GetSpellCooldown( 61304 ) -- GCD
-				local start, duration = GetSpellCooldown( spellID )
+				local start, duration, enabled = GetSpellCooldown( spellID )
 				local ready = (duration==0) -- or IsSpellOverlayed(spellID)
 				if duration and ( ready or duration>1.5 or gs~=start or gd~=duration ) then
 					if ready then
@@ -144,6 +133,17 @@ do
 		end
 	end
 
+	local function UpdateUsable(button)
+		if not button.vExpiration then
+			if button.spellID then
+				ButtonSetEnabled( button, IsUsableSpell(button.spellID) )
+			else
+				ButtonSetEnabled( button, IsUsableItem(button.itemID) )
+			end
+			UpdateOverlay(button)
+		end
+	end
+
 	local function UpdateCountUsable(button)
 		UpdateCount(button)
 		UpdateUsable(button)
@@ -172,11 +172,27 @@ do
 			ACTIONBAR_UPDATE_USABLE            = UpdateUsable,
 		}
 
+		local GSI = GetSpellInfo
+		local frost_spells = { [GSI(120)] = true, [GSI(122)] = true, [GSI(168)] = true, [GSI(7302)] = true, [GSI(11426)] = true, [GSI(11958)] = true }
+		local function ResetFrostCooldowns()
+			for button in next,buttons do
+				if frost_spells[button.db.spell] then
+					ButtonSetCountdown( button )
+					ButtonSetCount( button, 1 )
+					ButtonSetEnabled( button, IsUsableSpell(button.spellID) )
+				end
+			end
+		end
+
 		local function UpdateCooldowns(frame, event, ...)
 			local time = GetTime()
 			local func = funcs[event]
-			for object in next,buttons do
-				func(object, time, ...)
+			if func then
+				for object in next,buttons do
+					func(object, time, ...)
+				end
+			elseif select(3,...)==12472 then  -- mage fix Cold Snap in classic
+				ResetFrostCooldowns()
 			end
 		end
 
@@ -199,6 +215,8 @@ do
 		if addon.versionCli>=30000 then -- Wotlk or superior
 			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW")
 			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE")
+		elseif addon.versionCli<20000 and select(2, UnitClass("player"))=='MAGE' then
+			frame:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
 		end
 	end
 
@@ -238,10 +256,10 @@ do
 	function cooldown.OnCreate(button)
 		local texture
 		if button.db.spell then
-			local spellID  = button.db.spellID
-			button.itemID  = nil
+			local spellID = button.db.spellID
+			button.itemID = nil
 			button.spellID = (spellID and (GetSpellInfo(spellID)) and spellID) or select(7, GetSpellInfo(button.db.spell)) or 1
-			texture        = (GetSpellTexture(button.spellID)) or (GetSpellTexture(button.db.spell)) or button.db.texture
+			texture = (GetSpellTexture(button.spellID)) or (GetSpellTexture(button.db.spell)) or button.db.texture
 			if button.spellID==1 then
 				print("CoolAuras ERROR spellID is not recognized:", spellID, button.db.spell)
 			end
