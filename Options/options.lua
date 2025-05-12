@@ -226,9 +226,10 @@ end
 -- shapeshift forms
 local shapeshiftForms = {}
 local shapeshiftDefault
+shapeshiftForms[0] = string.format( "|T%s:0|t %s", select(3, GetSpellInfo(24168)), "Humanoid Form" )
 for i=1,GetNumShapeshiftForms() do
    local icon, active, castable, spellID = GetShapeshiftFormInfo(i)
-   shapeshiftForms[spellID] = string.format( "|T%s:0|t %s", icon, (GetSpellInfo(spellID)) )
+   shapeshiftForms[spellID] = string.format( "|T%s:0|t %s", icon, GetSpellInfo(spellID) )
    shapeshiftDefault = shapeshiftDefault or spellID
 end
 if addon.isWrath and not shapeshiftForms[33891] then
@@ -1731,10 +1732,14 @@ BUTTONS.COOLDOWN = {
 	},
 	overlayHeader = { type = 'header', order = 6, name = 'Display Overlay Glow' },
 	overlayEnabled = {
-		type = 'toggle', order = 7, name = 'When spell procs', desc = "Display overlay glowing border when a reactive proc-like spell becomes active.",
+		type = 'toggle', order = 7, width = 0.85, name = 'When spell procs', desc = "Display overlay glowing border when a reactive proc-like spell becomes active.",
 	},
 	overlayReady = {
-		type = 'toggle', order = 8, name = 'Also when is ready', desc = "Also display overlay glow when spell is ready to use.",
+		type = 'toggle', order = 8, width = 0.85, name = 'Also when is ready', desc = "Also display overlay glow when spell is ready to use.",
+		disabled = function() return not button.overlayEnabled end,
+	},
+	overlayCasting = {
+		type = 'toggle', order = 9, width = 0.85, name = 'Also when is casted', desc = "Also display overlay glow when spell is queued or being cast.",
 		disabled = function() return not button.overlayEnabled end,
 	},
 }

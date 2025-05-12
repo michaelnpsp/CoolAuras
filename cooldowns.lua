@@ -33,6 +33,7 @@ do
 	local GetSpellTexture    = GetSpellTexture
 	local GetItemCooldown    = GetItemCooldown
 	local IsUsableSpell      = IsUsableSpell
+	local IsCurrentSpell     = IsCurrentSpell
 	local IsSpellOverlayed   = IsSpellOverlayed or function() return false end
 	local ButtonOverlayShow  = addon.ButtonOverlayShow
 	local ButtonOverlayHide  = addon.ButtonOverlayHide
@@ -61,8 +62,11 @@ do
 
 	local function UpdateOverlay(button)
 		if button.vOverlayEnabled then
+			local spellID = button.spellID or 1
 			local overlay = button.overlay
-			local flag = button.vOverlayReady and (not not button.vEnabled) or IsSpellOverlayed(button.spellID or 1)
+			local flag = (button.vOverlayReady and not not button.vEnabled)  or
+						 (button.vOverlayCasting and IsCurrentSpell(spellID))
+						 or IsSpellOverlayed(spellID)
 			if flag ~= (overlay~=nil) then
 				if overlay then
 					ButtonOverlayHide(button)
@@ -212,10 +216,9 @@ do
 		frame:RegisterEvent('SPELL_UPDATE_USABLE')
 		frame:RegisterEvent("SPELL_UPDATE_CHARGES")
 		frame:RegisterEvent("SPELL_UPDATE_ICON")
-		if addon.versionCli>=30000 then -- Wotlk or superior
-			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW")
-			frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE")
-		elseif addon.versionCli<20000 and select(2, UnitClass("player"))=='MAGE' then
+		frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_SHOW")
+		frame:RegisterEvent("SPELL_ACTIVATION_OVERLAY_GLOW_HIDE")
+		if addon.versionCli<20000 and select(2, UnitClass("player"))=='MAGE' then
 			frame:RegisterUnitEvent('UNIT_SPELLCAST_SUCCEEDED', 'player')
 		end
 	end
@@ -275,6 +278,7 @@ do
 		end
 		button.vOverlayEnabled  = button.db.overlayEnabled
 		button.vOverlayReady    = button.db.overlayReady
+		button.vOverlayCasting  = button.db.overlayCasting
 		button.vIconTexture = texture
 		button.Icon:SetTexture( texture )
 		button.countThreshold = button.db.countThreshold or 1
