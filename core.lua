@@ -797,17 +797,13 @@ addon.ButtonSetEnabled    = ButtonSetEnabled
 
 function addon:Run(frame)
 	frame:SetScript('OnEvent', OnGameEvent)
-	if isClassic then
-		frame:RegisterEvent( 'CHARACTER_POINTS_CHANGED' )
-	else
-		frame:RegisterEvent( 'PLAYER_TALENT_UPDATE' )
-		frame:RegisterEvent( 'PLAYER_SPECIALIZATION_CHANGED' )
-	end
+	frame:RegisterEvent( 'CHARACTER_POINTS_CHANGED' )
+	frame:RegisterEvent( 'PLAYER_TALENT_UPDATE' )
+	frame:RegisterEvent( 'PLAYER_SPECIALIZATION_CHANGED' )
 	frame:RegisterEvent( 'PLAYER_REGEN_DISABLED' )
 	frame:RegisterEvent( 'PLAYER_REGEN_ENABLED' )
 	frame:RegisterEvent( 'UPDATE_BINDINGS' )
 	frame:RegisterEvent( 'UPDATE_SHAPESHIFT_FORM' )
-
 	self.playerClass = select(2,UnitClass('player'))
 	self.playerName  = UnitName('player')
 	self.inCombat    = not not InCombatLockdown()
